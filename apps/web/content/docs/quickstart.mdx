@@ -1,0 +1,75 @@
+---
+title: Quickstart
+description: From nothing to a shared link in two commands.
+---
+
+<Steps>
+<Step>
+
+### Install the CLI
+
+<Tabs items={["macOS / Linux", "Windows", "Go"]}>
+<Tab value="macOS / Linux">
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/biga-sh/cli/main/install.sh | sh
+```
+
+</Tab>
+<Tab value="Windows">
+
+```powershell
+irm https://raw.githubusercontent.com/biga-sh/cli/main/install.ps1 | iex
+```
+
+</Tab>
+<Tab value="Go">
+
+```sh
+go install github.com/biga-sh/cli/cmd/biga@latest
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### Start a broadcast
+
+From the folder you want to share:
+
+```sh
+biga start
+```
+
+biga uploads the folder, prints a link, and keeps streaming every saved change
+until you stop it.
+
+</Step>
+<Step>
+
+### Send the link
+
+Press <kbd>c</kbd> in the live panel to copy it, or <kbd>o</kbd> to open it
+yourself. Anyone with the link sees the same tree and the same files, and
+they follow along as you save.
+
+</Step>
+<Step>
+
+### Stop, and pick it back up
+
+Press <kbd>q</kbd> to stop. Running `biga start` in the same folder later
+**rejoins** the same session, so a link you already shared keeps working, and
+only what changed while you were away is uploaded.
+
+</Step>
+</Steps>
+
+<Callout type="info" title="Which server?">
+By default the CLI talks to `http://localhost:3000`, which is a local copy of
+the server. To get a link people outside your machine can open, point it at a
+hosted instance with `BIGA_API_URL` or `--api-url`. See
+[configuration](/docs/configuration).
+</Callout>

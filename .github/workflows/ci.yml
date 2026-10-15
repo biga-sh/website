@@ -4,9 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Also callable as a reusable workflow so release.yml reuses this exact gate
-  # instead of duplicating the verify job.
-  workflow_call:
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
@@ -45,8 +42,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Scope checks to the published CLI and its workspace dependencies. This is
-      # the exact set of work that gates a release, so the publish workflow can
-      # reuse it verbatim.
-      - name: Lint, type-check, and build the CLI
-        run: pnpm exec turbo run lint check-types build --filter=@zenshilabs/spire
+      # The web app and the packages it builds from. The build needs a database
+      # URL to exist, not to answer: every route that reads it is dynamic.
+      - name: Lint, type-check, and build the web app
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: pnpm exec turbo run lint check-types build --filter=web

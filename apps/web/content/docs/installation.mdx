@@ -1,0 +1,83 @@
+---
+title: Installation
+description: Install the biga CLI on macOS, Linux, Windows or FreeBSD, and verify what you downloaded.
+---
+
+biga is distributed through
+[GitHub releases](https://github.com/biga-sh/cli/releases/latest). Each
+release has builds for Linux (x64, arm64, armv7), macOS (one universal
+binary), Windows (x64, arm64) and FreeBSD (x64, arm64).
+
+## Install script
+
+<Tabs items={["macOS, Linux, FreeBSD", "Windows"]}>
+<Tab value="macOS, Linux, FreeBSD">
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/biga-sh/cli/main/install.sh | sh
+```
+
+Installs to `~/.local/bin`.
+
+</Tab>
+<Tab value="Windows">
+
+```powershell
+irm https://raw.githubusercontent.com/biga-sh/cli/main/install.ps1 | iex
+```
+
+Installs to `%LOCALAPPDATA%\Programs\biga` and adds it to your `PATH`.
+
+</Tab>
+</Tabs>
+
+The scripts pick the right build for your OS and CPU and check it against the
+release's `checksums.txt`. If [cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
+is installed they check that file's signature too.
+
+| Variable | Effect |
+| --- | --- |
+| `BIGA_VERSION` | Install a specific version instead of the latest. |
+| `BIGA_INSTALL_DIR` | Install into this directory. |
+
+## Other ways
+
+**An archive.** Download the one for your platform from the releases page,
+unpack it, and put `biga` on your `PATH`.
+
+**A package.** Linux releases also include `.deb`, `.rpm`, `.apk` and Arch
+packages:
+
+```sh
+sudo apt install ./biga_1.0.0_amd64.deb
+```
+
+**With Go** 1.26 or newer:
+
+```sh
+go install github.com/biga-sh/cli/cmd/biga@latest
+```
+
+## Verify a download
+
+`checksums.txt` lists every file in a release and is signed with
+[Sigstore](https://www.sigstore.dev) by the release workflow. A valid
+signature proves the files were built by the repository's CI from the tagged
+commit.
+
+```sh
+cosign verify-blob \
+  --certificate-identity "https://github.com/biga-sh/cli/.github/workflows/release.yml@refs/tags/v1.0.0" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --bundle checksums.txt.sigstore.json checksums.txt
+sha256sum --check --ignore-missing checksums.txt
+```
+
+Or check one file's build provenance with the GitHub CLI:
+
+```sh
+gh attestation verify biga_1.0.0_linux_amd64.tar.gz --repo biga-sh/cli
+```
+
+Every archive also ships with an SBOM (`*.sbom.json`) listing its
+dependencies.

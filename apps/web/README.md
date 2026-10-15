@@ -1,99 +1,31 @@
 # apps/web
 
-Next.js 16 application serving the Spire landing page, session viewer UI, and the REST + SSE API consumed by both the CLI broadcaster and browser viewers.
+The Next.js app behind biga: the landing page, the documentation, the
+read-only session viewer, and the REST + SSE API the
+[CLI](https://github.com/biga-sh/cli) and every viewer talk to.
 
-## Architecture
+See the [repository README](../../README.md) for setup, configuration and how
+the pieces fit together.
 
-```mermaid
-flowchart TB
-    subgraph pages["Pages (App Router)"]
-        HOME["/ — landing + session join form"]
-        SESSION["/session/[sessionId] — viewer"]
-    end
+## Where things are
 
-    subgraph api["API Routes"]
-        direction LR
-        R1["PUT    /api/sessions/:id\ncreate or reactivate"]
-        R2["DELETE /api/sessions/:id\nend session"]
-        R3["POST   /api/sessions/:id/snapshot\ningest full tree"]
-        R4["POST   /api/sessions/:id/checkpoint\ningest save burst"]
-        R5["GET    /api/sessions/:id/state\ninitial viewer payload"]
-        R6["GET    /api/sessions/:id/stream\nSSE live events"]
-        R7["GET    /api/sessions/:id/file\nlazy content fetch"]
-        R8["GET    /api/sessions/:id/checkpoints\nhistory list"]
-        R9["GET    /api/sessions/:id/checkpoints/:seq\nsingle checkpoint"]
-    end
+| Path | What lives there |
+| --- | --- |
+| `src/app/page.tsx`, `src/components/home` | The landing page. |
+| `content/docs`, `src/app/docs` | The documentation: MDX pages rendered by [Fumadocs](https://fumadocs.dev), with Mermaid diagrams in fenced `mermaid` blocks. |
+| `src/app/brand`, `public/brand` | The brand page and its downloadable files. |
+| `src/app/session/[sessionId]` | The viewer. |
+| `src/app/api` | The API routes. |
+| `src/components/showcase`, `src/lib/showcase` | The landing page's use of the real viewer, fed from a committed snapshot instead of a server. |
+| `src/components/ui` | shadcn-style primitives, plus the vendored [keyframeui](https://keyframeui.com) components (`circuit`, `autopilot`, `exploded-ui`). Update those with the registry, not by hand. |
 
-    subgraph lib["State Layer (app/api/_lib/)"]
-        STATE_MOD["state.ts\nsession · snapshot · checkpoint logic\nSSE fan-out — in-process + optional Redis bridge"]
-        HTTP_MOD["http.ts\ntyped response helpers"]
-    end
+## Commands
 
-    subgraph viewer["Viewer (Client Components)"]
-        STREAM["useSessionStream\nhydrate stores + subscribe to SSE"]
-        STORES["Zustand stores\nsession · file-tree · history · editor · theme"]
-        MONACO["Monaco Editor\n+ Shiki syntax highlighting"]
-        TREE["Virtualized file tree\nwith context menus"]
-        TIMELINE["Checkpoint timeline\n+ inline Monaco diffs"]
-    end
-
-    DB[(Postgres\nvia @spire/db)]
-    REDIS[(Redis — optional\nsrc/lib/redis.ts\ncross-instance pub/sub · cache · seq)]
-
-    R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 --> STATE_MOD
-    STATE_MOD --> DB
-    STATE_MOD -.->|when REDIS_URL set| REDIS
-    SESSION --> STREAM
-    STREAM --> STORES
-    STORES --> MONACO & TREE & TIMELINE
+```sh
+pnpm dev          # next dev on :3000
+pnpm build        # next build
+pnpm lint         # eslint, no warnings allowed
+pnpm check-types  # next typegen && tsc --noEmit
 ```
 
-## Viewer Data Flow
-
-```mermaid
-sequenceDiagram
-    participant Hook as useSessionStream
-    participant State as /api/.../state
-    participant SSE as /api/.../stream
-    participant Stores as Zustand Stores
-    participant Cache as ContentCache (LRU)
-
-    Hook->>State: fetch initial payload
-    State-->>Hook: session + snapshot + checkpoints + contents?
-    Hook->>Stores: hydrate all stores
-    Hook->>Cache: prefill (eager mode only)
-    Hook->>SSE: EventSource subscribe
-
-    loop Live updates
-        SSE-->>Hook: checkpoint event
-        Hook->>Stores: applyChanges + addLive
-        SSE-->>Hook: snapshot event
-        Hook->>Stores: setTree
-    end
-```
-
-## Key Files
-
-| Path | Description |
-|------|-------------|
-| `src/app/api/_lib/state.ts` | Core session/snapshot/checkpoint business logic + SSE pub/sub (Redis-bridged across instances when configured) |
-| `src/app/api/_lib/http.ts` | `success` / `failure` / `readJsonBody` response helpers (optional cache headers) |
-| `src/lib/redis.ts` | Env-gated Redis layer: cross-instance SSE bridge, session/blob cache, atomic checkpoint seq |
-| `src/app/session/[sessionId]/session-viewer.tsx` | Top-level viewer layout (panels, status bar, quick-open) |
-| `src/app/session/[sessionId]/file-tree.tsx` | Virtualized file tree with context menus |
-| `src/app/session/[sessionId]/code-viewer.tsx` | Monaco tabs, diff mode, breadcrumbs |
-| `src/app/session/[sessionId]/history-panel.tsx` | Checkpoint timeline with inline Monaco diffs |
-| `src/components/monaco-viewer.tsx` | Monaco viewer and diff-viewer wrappers |
-| `src/lib/use-session-stream.ts` | Store hydration + SSE subscription hook |
-| `src/lib/use-file-content.ts` | Cache-first file content hook with hover prefetch |
-| `src/lib/content-cache.ts` | Content-addressed LRU cache (~120 entries / ~12 MB) |
-| `src/lib/session-api.ts` | Typed fetch helpers for all viewer-side API calls |
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | Neon/Postgres connection string |
-| `REDIS_URL` | No | TCP `rediss://` endpoint (e.g. Upstash). Enables cross-instance live events + session/blob cache; falls back to in-process when unset |
-| `SPIRE_EAGER_MAX_BYTES` | No | Max total session size for eager mode (default: 1.5 MB) |
-| `SPIRE_EAGER_MAX_FILES` | No | Max file count for eager mode (default: 400) |
+Docs content changes need a dev-server restart to be picked up.

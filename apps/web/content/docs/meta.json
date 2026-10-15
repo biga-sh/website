@@ -1,0 +1,20 @@
+{
+  "title": "biga",
+  "pages": [
+    "index",
+    "quickstart",
+    "installation",
+    "---Using biga---",
+    "cli",
+    "workspaces",
+    "what-gets-shared",
+    "sessions",
+    "viewer",
+    "---How it works---",
+    "architecture",
+    "api",
+    "---Running it---",
+    "configuration",
+    "self-hosting"
+  ]
+}

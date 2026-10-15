@@ -1,0 +1,240 @@
+---
+title: Architecture
+description: How a save in your editor becomes a checkpoint in someone else's browser tab.
+---
+
+biga is three programs and a database: a CLI that watches a folder, a server
+that stores what the CLI sends and relays it, and a viewer that renders it.
+Nothing is pushed from the server to your machine, and the viewer never talks
+to the CLI.
+
+## The whole system
+
+```mermaid title="The whole system" summary="Your folder is read by the biga CLI on your machine. The CLI uploads over HTTP to the server's REST API, which writes to Postgres and, optionally, publishes events through Redis. The server streams events to viewers' browsers, which read state and file content over the same API." caption="Your folder goes in one side and a browser tab comes out the other. Redis is optional and only matters with more than one server."
+flowchart TB
+  folder["<b>Your folder</b><br/>.gitignore · .bigaignore"] --> cli["<b>biga CLI</b><br/>watch · hash · batch"]
+  cli -- "PUT · POST (gzip)" --> api
+
+  subgraph host["Server · Next.js"]
+    api["<b>REST API</b><br/>uploads and reads"]
+    sse["<b>SSE stream</b><br/>live events"]
+  end
+
+  api -- "in-process" --> sse
+  api --> db[("<b>Postgres</b><br/>source of truth")]
+  api -. "publish" .-> redis[("<b>Redis</b> · optional<br/>events · cache")]
+  redis -. "other instances" .-> sse
+  sse -- "checkpoint events" --> viewer["<b>Viewer</b><br/>any browser"]
+  viewer -- "GET state · file" --> api
+```
+
+- **The CLI** is one Go binary. It is the only thing that ever reads your files.
+- **The server** is a Next.js app. It accepts uploads over REST and delivers
+  live events over server-sent events. See the [HTTP API](/docs/api).
+- **Postgres** is the source of truth for every session. **Redis** is optional
+  and only needed to run more than one server instance.
+- **The viewer** is the page a link opens. It loads a session's state once and
+  then follows a stream.
+
+There are no accounts anywhere. The session ID is the credential, which is why
+the CLI is careful about [what it shares](/docs/what-gets-shared).
+
+## What the CLI does between a save and an upload
+
+```mermaid title="What the CLI does between a save and an upload" summary="Six stages in order: watch for changed paths, filter them through the ignore rules, batch them until the folder is quiet, read and hash the files, diff against the last synced hashes, then upload the difference. If nothing differs, nothing is sent." caption="The watcher only says a path may have changed. Content hashes decide what actually did, which keeps it right across editors that write in place, rename over, or delete and recreate."
+flowchart TB
+  W["<b>1 · Watch</b> — fsnotify, 75 ms to settle"] --> F["<b>2 · Filter</b> — built-ins, .gitignore, .bigaignore"]
+  F --> B["<b>3 · Batch</b> — 120 ms quiet, or 1 s into a burst"]
+  B --> R["<b>4 · Read</b> — skip binary and over 2 MB, SHA-256"]
+  R --> D{"<b>5 · Diff</b> — hash changed?"}
+  D -- "yes" --> U["<b>6 · Upload</b> — gzip, under 6 MB, buffered offline"]
+  D -- "no" --> N(["nothing sent"])
+```
+
+Three details are worth knowing:
+
+- **A burst is one checkpoint.** Every change restarts a quiet timer
+  (`BIGA_IDLE_MS`, 120 ms). A long burst is cut at `BIGA_MAX_WAIT_MS` (1 s) so
+  viewers never wait on you for long. Flushes run one at a time, in order, so
+  uploads never overlap or reorder.
+- **Hashes decide, not events.** A path the watcher reports is re-read and
+  hashed, and only a different hash becomes a change. Saving a file without
+  changing it sends nothing.
+- **An ignore file is a change too.** Editing a `.gitignore` or `.bigaignore`
+  re-checks every synced file and rescans the tree, so newly ignored files
+  disappear for viewers and newly included ones appear.
+
+## One save, end to end
+
+```mermaid title="One save, end to end" summary="The editor writes a file and the CLI sees a filesystem event. After the folder has been quiet for 120 milliseconds, or one second into a burst, the CLI re-reads the paths, hashes them and diffs. It posts a gzip checkpoint, the server answers 202, assigns a sequence number, writes blobs and moves the head, then sends a checkpoint event to the viewer. The viewer updates its tree and timeline and fetches a file's content by hash only when it is opened." caption="Only changed files travel, and only after the folder has been quiet. A save that doesn't change a file's hash sends nothing."
+sequenceDiagram
+  autonumber
+  participant E as Your editor
+  participant C as biga CLI
+  participant S as Server
+  participant V as Viewer
+  E->>C: file written (fsnotify event)
+  Note over C: quiet for 120 ms, or 1 s into a burst
+  C->>C: re-read paths, SHA-256, diff
+  C->>S: POST /checkpoint (gzip)
+  S-->>C: 202 accepted
+  S->>S: assign seq, write blobs, move head
+  S-)V: event: checkpoint
+  V->>V: update tree and timeline
+  V->>S: GET /file?path&ref=hash
+  S-->>V: content, cached by hash
+```
+
+The upload is answered with `202` as soon as it is accepted. The server assigns
+the checkpoint a sequence number that is monotonic per session, writes the
+content it hasn't seen before, moves the head of the tree, and then publishes
+the event. A viewer applies the event to its tree and timeline, and fetches a
+file's content only when someone opens it.
+
+## Starting and rejoining
+
+A new session uploads a full snapshot first, then streams changes.
+
+```mermaid title="Starting a new session" summary="The CLI creates the session with a PUT, arms the file watcher, scans the folder and uploads a full snapshot. The server stores the tree and blobs. When a viewer opens the link it loads the state and then opens the event stream, which answers with a connected event." caption="The watcher is armed before the tree is read, so an edit made during the first upload is queued, not lost."
+sequenceDiagram
+  participant C as biga CLI
+  participant S as Server
+  participant V as Viewer
+  C->>S: PUT /sessions/:id
+  Note over C: arm the file watcher, then scan the folder
+  C->>S: POST /snapshot (full tree)
+  S->>S: store tree and blobs, seq 0
+  rect rgba(120, 120, 120, 0.12)
+    Note over V,S: a viewer opens the link
+    V->>S: GET /state
+    S-->>V: session, checkpoints, tree
+    V->>S: GET /stream
+    S-)V: event: connected
+  end
+```
+
+Running `biga start` again in the same folder finds the session ID saved for
+it and **rejoins**. Local files are always the source of truth, so the CLI
+asks the server for its manifest, uploads only the difference, and the link
+never changes.
+
+```mermaid title="Rejoining a session" summary="The CLI reactivates the session with a PUT, asks the server for its manifest of paths, hashes and sizes, and diffs its local tree against it. It posts a checkpoint with only the changed files, and the server sends a checkpoint event to viewers. If nothing differs, nothing is uploaded." caption="Local files are the source of truth. The CLI asks what the server has, uploads the difference, and the link never changes."
+sequenceDiagram
+  participant C as biga CLI
+  participant S as Server
+  participant V as Viewer
+  C->>S: PUT /sessions/:id
+  Note over C,S: session reactivated, same link
+  C->>S: GET /manifest
+  S-->>C: path, hash, size per file
+  C->>C: diff the local tree against it
+  alt files differ
+    C->>S: POST /checkpoint (changed only)
+    S-)V: event: checkpoint
+  else already in sync
+    Note over C: nothing to upload
+  end
+```
+
+If the manifest isn't available (an older server), the CLI falls back to a full
+snapshot. Changes made while the server cannot be reached are buffered and
+sent when it comes back.
+
+## Live delivery
+
+A viewer holds one `GET /api/sessions/:id/stream` open. The server writes four
+kinds of event on it:
+
+| Event | When |
+| --- | --- |
+| `connected` | First, when the stream opens. |
+| `checkpoint` | A checkpoint was accepted. Carries the changes. |
+| `snapshot` | The whole tree was replaced. |
+| `session_ended` | The broadcast stopped, or went quiet for too long. |
+
+Viewers only receive, so plain server-sent events are enough: ordinary HTTP,
+and the browser reconnects on its own. When a stream drops, the viewer
+re-reads the state and merges what it missed.
+
+A broadcast that stops sending heartbeats is marked ended once its session has
+been quiet for 45 seconds, so a laptop that died doesn't look live forever.
+The CLI sends a heartbeat every 10 seconds, and skips one when a checkpoint
+was just sent, since the server counts that as a sign of life too.
+
+### More than one server
+
+Events are delivered to the viewers connected to the instance that received
+the checkpoint first, and then published to Redis for the others. Each
+instance stamps what it publishes and ignores its own echo, so nothing is
+delivered twice. Without `REDIS_URL` everything stays in the process.
+
+<Callout type="warn" title="Needs a long-running host">
+Holding a stream open for every viewer means the server has to be a
+long-running Node process. A purely serverless or edge deployment can't
+fan live events out.
+</Callout>
+
+## The data model
+
+```mermaid title="The data model" summary="A session has one snapshot of the current tree, many checkpoints, many head files and many blobs. A checkpoint has many changes, and changes and head files both point at blobs by hash." caption="Content is stored once, by hash, per session. A checkpoint is metadata that points at blobs, so re-saving a file to an earlier state costs nothing."
+erDiagram
+  sessions ||--o| snapshots : "current tree"
+  sessions ||--o{ checkpoints : "history"
+  sessions ||--o{ files : "head"
+  sessions ||--o{ blobs : "content"
+  checkpoints ||--o{ checkpoint_changes : "contains"
+  checkpoint_changes }o--o| blobs : "before, after"
+  files }o--|| blobs : "points at"
+
+  sessions {
+    text id PK
+    text status "active or ended"
+  }
+  snapshots {
+    jsonb tree "metadata only"
+  }
+  checkpoints {
+    int seq "monotonic"
+    text label
+  }
+  checkpoint_changes {
+    text path
+    text change_type
+  }
+  files {
+    text path PK
+    text hash
+  }
+  blobs {
+    text hash PK
+    bytea content "raw or brotli"
+  }
+```
+
+- **Content is addressed by hash.** Each unique `(session, sha-256)` is stored
+  once, as raw UTF-8 or brotli, and referenced by hash from the tree, the head
+  files and every checkpoint change. `hash` and `size` always describe the raw
+  bytes, so the encoding is invisible to callers.
+- **Binary files are recorded, not stored.** They get a row with `binary` set
+  and no bytes.
+- **A checkpoint and its changes are written together.** The row and its
+  changes go in one batch, so a viewer never sees one without the other.
+- **A session cascades.** Deleting a session deletes everything under it, which
+  is what the retention sweep relies on.
+
+### Eager and lazy loading
+
+When a viewer opens a small session the server sends every current file's
+content with the state, so files open instantly. A session over roughly
+1.5 MB or 400 files is served lazily instead: the state carries the tree, and
+content is fetched per file, by hash, as it is opened. Both thresholds are
+[configurable](/docs/self-hosting#tuning).
+
+## Properties worth relying on
+
+| Property | Why it holds |
+| --- | --- |
+| A crash is repaired by running the same command | Local files are the source of truth, and rejoin diffs against the server. |
+| Unchanged files are never re-sent | Uploads are keyed by SHA-256, and a file whose hash hasn't changed isn't uploaded again. |
+| The viewer never writes | It has no editing interface and only calls read endpoints; the write endpoints are the CLI's. |
+| History is complete | Checkpoints are append-only, and content is immutable by hash. |

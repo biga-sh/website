@@ -1,0 +1,46 @@
+---
+title: Workspaces
+description: Broadcast several projects at once from one biga.json.
+---
+
+To broadcast several projects together, list them in a `biga.json` in the
+directory you run `biga start` from:
+
+```json title="biga.json"
+{
+  "projects": [
+    { "dir": "backend", "title": "API" },
+    { "dir": "frontend" }
+  ]
+}
+```
+
+Then a bare `biga start` broadcasts both. Each project gets its own session and
+its own link, and the sessions are linked on the server as one workspace.
+
+## Fields
+
+| Field | Description |
+| --- | --- |
+| `projects` | Required, and non-empty. The projects to broadcast. |
+| `projects[].dir` | The project's directory, resolved relative to the `biga.json`. Duplicates are an error. |
+| `projects[].title` | Optional. The session's title. |
+| `workspaceId` | Written by the CLI on first use; see below. |
+
+## The generated `workspaceId`
+
+On first use the CLI adds a `workspaceId` (like `ws-4k2m9x1a`) to the top of
+the file so the workspace's link stays stable. Commit it along with the rest
+of the file.
+
+## Precedence
+
+Directories passed on the command line (as arguments or `--dir`) take
+precedence over `biga.json`, which takes precedence over the current
+directory. Directories given on the command line are not grouped into a
+workspace; only a `biga.json` does that.
+
+<Callout type="warn">
+`--title` and `--session` are rejected when more than one project is being
+broadcast, because each project needs its own.
+</Callout>

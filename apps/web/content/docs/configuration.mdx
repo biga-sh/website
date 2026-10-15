@@ -1,0 +1,46 @@
+---
+title: Configuration
+description: Environment variables, the server URL and timing knobs.
+---
+
+## The server
+
+By default the CLI talks to `http://localhost:3000`. Point it at another
+server with `--api-url` or `BIGA_API_URL`:
+
+```sh
+BIGA_API_URL=https://biga.example.com biga start
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:BIGA_API_URL = "https://biga.example.com"; biga start
+```
+
+Release builds can bake a hosted server in with the `DefaultAPIURL` link-time
+setting, in which case this variable is only needed to override it.
+
+## Environment variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BIGA_API_URL` | `http://localhost:3000` | Server base URL. `--api-url` overrides it. |
+| `BIGA_HOME` | `~/.biga` | Where local state is kept. |
+| `BIGA_IDLE_MS` | `120` | Quiet time after the last change before a checkpoint is sent. |
+| `BIGA_MAX_WAIT_MS` | `1000` | The longest a burst of changes can delay a checkpoint. |
+| `BIGA_STABILITY_MS` | `75` | How long a file must stop changing before it is read. |
+| `BIGA_HEARTBEAT_MS` | `10000` | How often a broadcast tells the server it is live. |
+| `BIGA_NO_UPDATE_CHECK` | unset | Set to anything to skip the daily release check. `CI` set does the same. |
+
+<Callout type="info">
+Raise the timing values on slow disks or filesystems that report partial
+writes. Lowering them makes updates feel snappier.
+</Callout>
+
+## How a burst of saves becomes a checkpoint
+
+Every save restarts a quiet timer. Once the folder has been quiet for
+`BIGA_IDLE_MS`, or `BIGA_MAX_WAIT_MS` has passed since the first change in the
+burst, the changed files go out as one checkpoint. A long burst still flushes
+every second, so a viewer never waits on you for long.

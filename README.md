@@ -1,118 +1,116 @@
-# Spire
+<div align="center">
 
-Real-time code sharing, zero accounts required. Run the CLI to broadcast a local directory; share the URL; anyone watching sees every file change live.
+# biga
 
-## Architecture
+**Stream your saves, not your screen.**
 
-```mermaid
-flowchart LR
-    subgraph cli["@zenshilabs/spire (broadcaster)"]
-        direction TB
-        W[FileWatcher] -->|events| CB[CheckpointBatcher]
-        CB -->|batched saves| CLIENT[SpireApiClient]
-    end
+The server, viewer and website behind [biga](https://github.com/biga-sh/cli):<br>
+broadcast a folder as a live, read-only link. No accounts, nothing to install.
 
-    subgraph api["apps/web — Next.js API"]
-        direction TB
-        SESS["PUT /sessions/:id\ncreate or reactivate"]
-        SNAP["POST /sessions/:id/snapshot\nfull file tree"]
-        CHKPT["POST /sessions/:id/checkpoint\nsave-burst batch"]
-        STATE["GET /sessions/:id/state\ninitial viewer load"]
-        STREAM["GET /sessions/:id/stream\nSSE live events"]
-        FILE["GET /sessions/:id/file\nlazy content fetch"]
-        DB[(Postgres)]
-        REDIS[(Redis — optional\ncross-instance pub/sub · cache · seq)]
-        SESS & SNAP & CHKPT --> DB
-        DB --> STATE & STREAM & FILE
-        SNAP & CHKPT -.->|publish events| REDIS
-        REDIS -.->|live events across instances| STREAM
-        STATE & FILE -.->|read-through cache| REDIS
-    end
+[![CI](https://img.shields.io/github/actions/workflow/status/biga-sh/website/ci.yml?branch=main&style=flat-square&labelColor=0b0c0e)](https://github.com/biga-sh/website/actions/workflows/ci.yml)
+[![CLI](https://img.shields.io/github/v/release/biga-sh/cli?label=cli&style=flat-square&color=63e197&labelColor=0b0c0e)](https://github.com/biga-sh/cli/releases/latest)
 
-    subgraph viewer["Browser Viewer"]
-        direction TB
-        HOOK[useSessionStream] --> STORES[Zustand Stores]
-        STORES --> EDITOR[Monaco Editor]
-        STORES --> TREE[File Tree]
-        STORES --> TIMELINE[Checkpoint Timeline]
-    end
+</div>
 
-    CLIENT -->|PUT/POST| SESS
-    CLIENT -->|POST| SNAP
-    CLIENT -->|POST| CHKPT
-    STATE -->|initial load| HOOK
-    STREAM -->|SSE events| HOOK
-    FILE -->|on-demand content| EDITOR
-```
+This repository is everything on the other side of the wire from the
+[`biga` CLI](https://github.com/biga-sh/cli): the API that stores sessions and
+streams them live, the read-only viewer a link opens, and the marketing site
+and documentation.
 
-## Session Lifecycle
+## Run it locally
 
-```mermaid
-sequenceDiagram
-    participant CLI as spire start
-    participant API as Web API
-    participant SSE as SSE Stream
-    participant V as Browser Viewer
-
-    CLI->>API: PUT /sessions/:id (create/reactivate)
-    CLI->>API: POST /sessions/:id/snapshot (full tree + content)
-    V->>API: GET /sessions/:id/state (initial load)
-    V->>SSE: GET /sessions/:id/stream (subscribe)
-    SSE-->>V: connected event
-
-    loop File changes
-        CLI->>API: POST /sessions/:id/checkpoint (save burst)
-        API-->>SSE: checkpoint event (fan out)
-        Note over API,SSE: With REDIS_URL set, the event is also published to Redis<br/>and fanned out to viewers connected to other instances
-        SSE-->>V: checkpoint event (apply to tree)
-    end
-
-    CLI->>API: DELETE /sessions/:id (Ctrl+C)
-    API-->>SSE: session_ended event
-    SSE-->>V: session_ended (viewer shows final state)
-```
-
-## Resumable Sessions
-
-The session ID is stored in `~/.spire/sessions.json` keyed by directory. Re-running `spire start` in the same folder reactivates the same session and re-uploads a fresh snapshot — so crashed CLIs, server restarts, and dropped connections all recover with the same share URL and unbroken history.
-
-## Workspace
-
-| Package | Description |
-|---------|-------------|
-| `apps/web` | Next.js 16 — landing page, session viewer UI, REST + SSE API |
-| `apps/cli` | Node.js CLI (published as [`@zenshilabs/spire`](https://www.npmjs.com/package/@zenshilabs/spire)) — file watcher, snapshot, checkpoint batching |
-| `packages/types` | Zod schemas, TypeScript types, and file-identity utilities (`HASH_RE`, `isValidHash`, `baseName`) shared across the monorepo |
-| `packages/stores` | Zustand stores for the web viewer (file tree, history, editor, theme) |
-| `packages/db` | Drizzle ORM schema and typed queries (Neon/Postgres) |
-| `packages/eslint-config` | Shared ESLint flat configs |
-| `packages/typescript-config` | Shared TypeScript configs |
-
-## Getting Started
+You need Node 22+, pnpm, and a Postgres database ([Neon](https://neon.tech)
+works out of the box).
 
 ```sh
 pnpm install
-pnpm dev          # run the web app dev server
-pnpm build        # build all workspaces
-pnpm check-types  # type-check all workspaces
-pnpm lint         # lint all workspaces
+cp apps/web/.env.example apps/web/.env.local   # set DATABASE_URL
+pnpm db:push                                   # create the tables
+pnpm dev                                       # http://localhost:3000
 ```
 
-## Running a Session
+Then, in any project, with the [CLI installed](https://github.com/biga-sh/cli#install):
 
-1. Start the web app: `pnpm dev` (serves on `http://localhost:3000`).
-2. In a second terminal, broadcast a directory:
-   ```sh
-   pnpm --filter @zenshilabs/spire dev start --dir <path> --title "My session"
-   ```
-3. The CLI prints a share URL — `http://localhost:3000/session/<id>`. Share it.
-4. To resume after a disconnect, re-run the same command in the same directory.
+```sh
+biga start
+```
 
-> The CLI defaults to `http://localhost:3000`. Override with `SPIRE_API_URL`.
+The CLI talks to `http://localhost:3000` by default, so the link it prints
+opens your local copy.
 
-## Design Notes
+## How it fits together
 
-- **No authentication** — the session ID is the credential. Spire is intentionally ephemeral.
-- **Content-addressed storage** — file content is stored as SHA-256 blobs, deduplicated per session. Re-saving a file to a prior state costs nothing.
-- **Eager / lazy mode** — sessions under ~1.5 MB / 400 files ship all content up front for instant opens; larger sessions serve content per-file on demand. Thresholds are tunable via `SPIRE_EAGER_MAX_BYTES` and `SPIRE_EAGER_MAX_FILES` env vars on the web server.
-- **In-process pub/sub, optionally Redis-backed** — live events fan out in-memory with no broker required for a single instance. Set `REDIS_URL` (a TCP `rediss://` endpoint such as Upstash) to bridge events across instances so the web app can run on more than one node — the same connection also backs a short-TTL session cache, an immutable blob cache, and an atomic checkpoint-seq counter. With `REDIS_URL` unset everything degrades to the in-process path. Multi-instance SSE requires a long-running Node host (not pure edge/serverless).
+```mermaid
+flowchart LR
+  cli["biga CLI<br/>watch · hash · batch"] -- "PUT · POST (gzip)" --> api
+
+  subgraph web["apps/web · Next.js"]
+    api["REST API"]
+    sse["SSE stream"]
+    api -- "in-process" --> sse
+  end
+
+  api --> db[("Postgres")]
+  api -. "optional" .-> redis[("Redis")]
+  redis -. "other instances" .-> sse
+  viewer["Viewer<br/>any browser"] -- "GET state · file" --> api
+  sse -- "checkpoint events" --> viewer
+```
+
+The CLI uploads a snapshot, then a checkpoint for every burst of saves. The
+server stores them (content-addressed, so a file saved back to an earlier state
+costs nothing) and relays each one to the viewers on that session over
+server-sent events. Redis is optional and only needed to run more than one
+instance. The full tour, with sequence diagrams and the data model, is in the
+[architecture docs](apps/web/content/docs/architecture.mdx), and the endpoints
+are in the [API reference](apps/web/content/docs/api.mdx).
+
+## Repository
+
+| Path | What it is |
+| --- | --- |
+| `apps/web` | The Next.js app: landing page, documentation (Fumadocs, in `content/docs`), session viewer and the REST + SSE API. |
+| `packages/server` | Session, checkpoint and file logic, and live-event delivery. |
+| `packages/db` | Drizzle schema and queries for Postgres. |
+| `packages/redis` | The optional Redis bridge: pub/sub, cache and sequence counters. |
+| `packages/stores` | The viewer's Zustand stores. |
+| `packages/types` | Zod schemas and types shared by the server and the viewer. |
+| `packages/eslint-config`, `packages/typescript-config` | Shared tooling config. |
+| `apps/cli` | `@zenshilabs/spire`, the original Node CLI, **deprecated**. Its last release only points people at `biga`, which is now a Go binary. |
+
+## Configuration
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | Postgres connection string. |
+| `REDIS_URL` | no | A TCP `rediss://` URL. Enables cross-instance live events and a shared cache. |
+| `NEXT_PUBLIC_SITE_URL` | no | Public origin, for absolute metadata URLs. Defaults to `http://localhost:3000`. |
+| `CRON_SECRET` | for cleanup | Bearer token protecting `/api/cron/cleanup`. |
+| `SPIRE_RETENTION_DAYS` | no | Days an ended session is kept. Defaults to 30. |
+| `SPIRE_DEMO_SESSION_ID` | no | A session the cleanup never deletes. |
+
+The size limits, eager-loading thresholds and staleness window are tunable too;
+see [self-hosting](apps/web/content/docs/self-hosting.mdx).
+
+Live updates hold a connection open per viewer, so deploy on a long-running
+Node host. A purely serverless or edge deployment can't fan events out.
+
+## Development
+
+```sh
+pnpm dev          # the web app
+pnpm build        # build every workspace
+pnpm check-types  # type-check
+pnpm lint         # lint
+```
+
+Two generated pieces are committed, and have scripts to rebuild them:
+
+| Script (in `apps/web`) | Regenerates |
+| --- | --- |
+| `node scripts/build-showcase.mjs` | The snapshot of the CLI repository the landing page renders in the real viewer (`src/lib/showcase`). Needs the CLI checked out next to this repo. |
+| `node scripts/build-brand-assets.mjs` | The downloadable logo files in `public/brand`. |
+
+## License
+
+[MIT](LICENSE)

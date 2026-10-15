@@ -1,0 +1,112 @@
+---
+title: CLI reference
+description: Every command and flag of the biga CLI.
+---
+
+```text
+biga start [dir...] [--dir <path>]... [--title <text>] [--session <id>] [--open]
+biga status [dir] [--json]
+biga list [--json]
+biga open [dir]
+biga stop [dir] [--all]
+```
+
+Run `biga` with no command in a terminal to pick one interactively, and
+`biga <command> --help` for a command's own help. `biga --version` prints the
+version.
+
+## Global flags
+
+| Flag | Description |
+| --- | --- |
+| `--api-url <url>` | The server to use. Defaults to `$BIGA_API_URL`, then `http://localhost:3000`. |
+| `--version` | Print the version and exit. |
+
+## `biga start`
+
+Broadcasts one or more directories and streams every saved change until you
+stop it. With no argument it uses the current directory.
+
+| Flag | Description |
+| --- | --- |
+| `[dir...]` | Directories to broadcast. Several start in parallel, each as its own session. |
+| `--dir <path>` | The same as a positional directory. May be repeated. |
+| `--title <text>` | The session's title, up to 120 characters. One directory only. |
+| `--session <id>` | Use this session ID, which rejoins it if it exists. One directory only. |
+| `--open` | Open the link in your browser once it is live. |
+
+Where the directories come from, in order: the ones you pass, then a
+`biga.json` in the current directory (see [workspaces](/docs/workspaces)),
+then the current directory itself.
+
+### The live panel
+
+In a terminal, `start` draws a panel that updates in place: each project's name
+and link, its state (`live`, or `reconnecting` while changes are buffered),
+how many checkpoints, files and bytes it has sent, and a feed of the files that
+changed.
+
+```text
+┌  biga
+◇  Started biga (k3f9zq2a) — uploaded 62 files, 254.6 KB
+│
+●  biga  localhost:3000/session/k3f9zq2a
+│  live · 1 checkpoint · 1 file · 1.1 KB sent · last sync just now
+│  14:02:11  ~ internal/config/config.go
+│
+c copy link · o open in browser · q stop
+```
+
+| Key | Action |
+| --- | --- |
+| <kbd>c</kbd> | Copy the link (all links, with several projects). |
+| <kbd>o</kbd> | Open the link in your browser. |
+| <kbd>q</kbd>, <kbd>Ctrl+C</kbd>, <kbd>Ctrl+D</kbd> | Stop, sending any final changes first. |
+
+Marks in the feed are `+` for a new file, `~` for a change and `−` for a
+deletion. When output is not a terminal (CI, a pipe, a log file) it prints
+plain lines instead.
+
+## `biga status`
+
+Shows details for a directory's session: its link, the directory, when it
+started and last synced, and whether a process is broadcasting it.
+
+| Flag | Description |
+| --- | --- |
+| `[dir]`, `--dir <path>` | The directory to look at. Defaults to the current one. |
+| `--json` | Machine-readable output. |
+
+## `biga list`
+
+Lists every session the CLI knows about, with a `● live` or `○ stopped` state,
+its title, directory, link and last activity.
+
+| Flag | Description |
+| --- | --- |
+| `--json` | Machine-readable output. |
+
+## `biga stop`
+
+Asks a running broadcast, even one in another terminal, to send its final
+changes and end its session. If the process is already gone it cleans up the
+leftover session.
+
+| Flag | Description |
+| --- | --- |
+| `[dir]`, `--dir <path>` | The directory to stop. Defaults to the current one. |
+| `--all` | Stop every broadcast. |
+
+## `biga open`
+
+Opens a directory's link in your browser.
+
+| Flag | Description |
+| --- | --- |
+| `[dir]`, `--dir <path>` | The directory. Defaults to the current one. |
+
+## Exit codes
+
+Pressing <kbd>Ctrl+C</kbd> before a broadcast is live prints `Cancelled.` and
+exits with status 130. Errors print a message and exit non-zero; if the server
+cannot be reached the message says which URL was tried and how to change it.

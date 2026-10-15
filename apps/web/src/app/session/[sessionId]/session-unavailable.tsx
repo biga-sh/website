@@ -4,7 +4,7 @@ import { RotateCwIcon, SearchXIcon, TimerIcon, WifiOffIcon, TriangleAlertIcon } 
 import Link from "next/link";
 
 import { JoinForm } from "@/components/landing/join-form";
-import { SpireMark } from "@/components/spire-mark";
+import { BigaMark } from "@/components/site/biga-mark";
 import { Button } from "@/components/ui/button";
 import type { LoadError } from "@/lib/use-session-stream";
 
@@ -21,7 +21,7 @@ const COPY = {
     },
     network: {
         icon: WifiOffIcon,
-        title: "Unable to reach Spire",
+        title: "Unable to reach biga",
         body: "Check your internet connection, then try again.",
     },
     server: {
@@ -59,8 +59,8 @@ export function SessionUnavailable({
                     target={linkTarget}
                     className="hover:bg-accent focus-visible:ring-ring/50 flex items-center gap-2 rounded-md px-2 py-1 transition-colors outline-none focus-visible:ring-[3px]"
                 >
-                    <SpireMark size={18} />
-                    <span className="text-sm font-semibold tracking-tight">Spire</span>
+                    <BigaMark cell={2} className="text-foreground" />
+                    <span className="text-sm font-semibold tracking-tight">biga</span>
                 </Link>
             </header>
 

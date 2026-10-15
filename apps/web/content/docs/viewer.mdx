@@ -1,0 +1,41 @@
+---
+title: The viewer
+description: What a viewer sees when they open your link.
+---
+
+The link opens a read-only page in the browser. There is nothing to install and
+nothing to sign in to, and nothing on it can write back to your disk.
+
+## Files and code
+
+- A **file tree** of the project, with a mark on files that changed in the
+  checkpoint being viewed. Build folders appear as empty stubs.
+- **Quick open**: press <kbd>⌘</kbd> <kbd>P</kbd> (<kbd>Ctrl</kbd> <kbd>P</kbd>
+  elsewhere) to jump to any file by name.
+- **Tabs and breadcrumbs** for the files you have open.
+- **Syntax highlighting** that follows the page's light or dark theme, or one
+  of the editor themes from the theme picker.
+- File actions: copy the contents, copy the path, download the file, wrap long
+  lines.
+
+## Following along
+
+While a broadcast is live, **Follow** opens each file as it is saved, so a
+viewer who just watches sees what you are working on. Browsing an older
+checkpoint pauses it, and a prompt offers to jump back to the latest.
+
+## Timeline
+
+The **Timeline** lists every checkpoint, newest first, with the files it
+changed and how many lines were added and removed. Selecting one shows a diff
+for each file and marks the changes in the tree.
+
+- **Compare** shows the open file against an earlier version, unified or side
+  by side.
+- **File history** lists every checkpoint that touched the open file.
+
+## When the broadcast stops
+
+A stopped broadcast stays viewable: the files show their final state and the
+timeline is intact. If the same directory is started again, the same link wakes
+up with the new changes.

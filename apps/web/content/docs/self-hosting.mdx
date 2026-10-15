@@ -1,0 +1,63 @@
+---
+title: Self-hosting
+description: Run the biga server on your own infrastructure.
+---
+
+The server is one Next.js app on Postgres. Redis is optional, and only needed
+to fan live events out across several instances. It lives in
+[biga-sh/website](https://github.com/biga-sh/website).
+
+## Environment
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | A Postgres connection string. A Neon database works out of the box. |
+| `REDIS_URL` | no | A TCP `rediss://` URL. Enables cross-instance live events and a shared cache. Without it the server runs single-instance with in-process pub/sub. |
+| `NEXT_PUBLIC_SITE_URL` | no | The site's public origin, used for absolute metadata URLs. Defaults to `http://localhost:3000`. |
+| `CRON_SECRET` | for cleanup | A bearer token protecting the retention endpoint. |
+| `SPIRE_RETENTION_DAYS` | no | Days an ended session is kept before deletion. Defaults to 30. |
+| `SPIRE_DEMO_SESSION_ID` | no | A session the retention sweep never deletes, and the one the landing page embeds. |
+
+<Callout type="warn" title="Legacy names">
+The server was renamed from Spire after these variables were defined, so a few
+still carry the `SPIRE_` prefix. They are read exactly as written above.
+</Callout>
+
+<Callout type="info" title="Redis must be TCP">
+Live updates hold a long-lived subscription open, so the Redis URL has to be a
+TCP `rediss://` one (Upstash's TCP endpoint, for example). An HTTP REST API
+cannot do it.
+</Callout>
+
+## Tuning
+
+All optional, and read by the server at startup.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `SPIRE_EAGER_MAX_BYTES` | 1.5 MiB | A session under this and under the file limit ships every file's content up front. |
+| `SPIRE_EAGER_MAX_FILES` | 400 | See above. Larger sessions load content per file. |
+| `SPIRE_SESSION_STALE_MS` | 45000 | How long a broadcast may go silent before it is marked ended. |
+| `SPIRE_MAX_SNAPSHOT_BYTES` | 32 MiB | Largest snapshot body. |
+| `SPIRE_MAX_CHECKPOINT_BYTES` | 8 MiB | Largest checkpoint body. |
+| `SPIRE_MAX_SESSION_BYTES` | 16 KiB | Largest session create or update body. |
+
+## Point the CLI at it
+
+```sh
+BIGA_API_URL=https://your-instance.example.com biga start
+```
+
+## Retention
+
+Ended sessions are kept for `SPIRE_RETENTION_DAYS` and then deleted, along with
+all their data. Sessions that stopped uncleanly (the CLI died) are marked ended
+after 24 hours of silence.
+
+The sweep runs when `/api/cron/cleanup` is called. On Vercel that is wired
+through `vercel.json`; elsewhere call it on a schedule:
+
+```sh
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://your-instance.example.com/api/cron/cleanup
+```

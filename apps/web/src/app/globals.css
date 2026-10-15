@@ -1,5 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Documentation (Fumadocs): its colours are mapped onto the shadcn tokens below. */
+@import "fumadocs-ui/css/shadcn.css";
+@import "fumadocs-ui/css/preset.css";
+/* Turbopack's CSS parser rejects the ::highlight() search-hit utilities Fumadocs
+   safelists, and the warning repeats on every request. Search results simply
+   lose their underline. */
+@source not inline("[&_::highlight(fd-search)]:text-fd-primary [&_::highlight(fd-search)]:underline");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -66,9 +73,33 @@
   --sidebar-accent-foreground: oklch(0.16 0.006 260);
   --sidebar-border: oklch(0.915 0.004 260);
   --sidebar-ring: oklch(0.7 0.01 260);
+
+  /*
+   * biga green (hue 155) is the marketing accent: the marker highlight, the
+   * packets on the hero circuit, small "annotation" labels. It means "this is
+   * the bit to read", never decoration. The viewer keeps its blue "now".
+   *   --brand        strokes, packets, icons (3:1 against the page is enough)
+   *   --brand-text   small green text, 7.3:1 on white
+   *   --brand-mark   the highlighter fill behind a phrase; text on it is
+   *                  --brand-mark-foreground in both themes (12:1)
+   */
+  --brand: oklch(0.5811 0.1403 155);
+  --brand-text: oklch(0.4416 0.1112 154.1);
+  --brand-mark: oklch(0.8196 0.1546 155);
+  --brand-mark-foreground: oklch(0.1408 0.0044 286);
+  /* Rails: the hairlines that frame the page column and divide sections. */
+  --rail: oklch(0.915 0.004 260);
+  --hatch: color-mix(in oklab, var(--foreground) 10%, transparent);
+  /* Stage bands are always dark, in both themes: the page's loud chapters. */
+  --stage: oklch(0.145 0.006 260);
 }
 
 .dark {
+  --brand: oklch(0.72 0.16 155);
+  --brand-text: oklch(0.8196 0.1546 155);
+  --rail: oklch(1 0 0 / 10%);
+  --hatch: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --stage: oklch(0.118 0.006 260);
   --spire-accent: oklch(0.6173 0.2057 267.32);
   --background: oklch(0.155 0.005 260);
   --foreground: oklch(0.97 0.002 260);
@@ -110,6 +141,15 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bricolage);
+  --font-body: var(--font-manrope);
+  --font-pixel: var(--font-geist-pixel-square);
+  --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
+  --color-brand-mark: var(--brand-mark);
+  --color-brand-mark-foreground: var(--brand-mark-foreground);
+  --color-rail: var(--rail);
+  --color-hatch: var(--hatch);
   --color-spire: var(--spire-accent);
   --color-spire-foreground: var(--spire-accent-foreground);
   --color-spire-solid: var(--spire-solid);
@@ -199,67 +239,8 @@
 }
 
 @layer utilities {
-  /* Faint blueprint grid that fades out at the edges. */
-  .spire-grid {
-    background-image:
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--foreground) 7%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--foreground) 7%, transparent) 1px,
-        transparent 1px
-      );
-    background-size: 46px 46px;
-    -webkit-mask-image: radial-gradient(
-      ellipse 75% 60% at 50% 0%,
-      oklch(0 0 0) 35%,
-      transparent 100%
-    );
-    mask-image: radial-gradient(
-      ellipse 75% 60% at 50% 0%,
-      oklch(0 0 0) 35%,
-      transparent 100%
-    );
-  }
-
-  /* Block caret that trails the "currently typing" line. */
-  .spire-caret-el {
-    display: inline-block;
-    width: 0.55ch;
-    height: 1.05em;
-    margin-left: 1px;
-    transform: translateY(0.16em);
-    background: var(--spire-accent);
-    border-radius: 1px;
-    animation: spire-caret 1.05s steps(1) infinite;
-  }
-
   .spire-rise {
     animation: spire-rise 500ms var(--ease-out) both;
-  }
-
-  /*
-   * Scroll-entry primitive. The element parks slightly low and transparent,
-   * then settles once an IntersectionObserver flips `data-revealed`. It fires
-   * once and stays: re-animating on every scroll-by would fight the reader.
-   * Stagger a group by setting `--reveal-delay` per child (50ms steps). Only
-   * `opacity` and `transform` change, so this never triggers layout.
-   */
-  .spire-reveal {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-    transition:
-      opacity 500ms var(--ease-out),
-      transform 500ms var(--ease-out);
-    transition-delay: var(--reveal-delay, 0ms);
-  }
-
-  .spire-reveal[data-revealed="true"] {
-    opacity: 1;
-    transform: none;
   }
 
   /*
@@ -270,173 +251,6 @@
     background: color-mix(in oklab, var(--background) 72%, transparent);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     backdrop-filter: blur(20px) saturate(160%);
-  }
-}
-
-/*
- * Diagram system ("Plates & Wires"). Every landing-page illustration is built
- * from these tokens: a wire (a connection), a plate (a checkpoint), and grid
- * paper confined to the diagram's own canvas — never the page background.
- */
-@layer base {
-  :root {
-    --diagram-grid: color-mix(in oklab, var(--foreground) 6%, transparent);
-    --diagram-wire: color-mix(in oklab, var(--foreground) 16%, transparent);
-    --diagram-wire-strong: color-mix(in oklab, var(--foreground) 34%, transparent);
-    --diagram-plate: color-mix(in oklab, var(--foreground) 82%, transparent);
-    --diagram-plate-dim: color-mix(in oklab, var(--foreground) 28%, transparent);
-  }
-  .dark {
-    --diagram-grid: color-mix(in oklab, var(--foreground) 8%, transparent);
-    --diagram-wire: color-mix(in oklab, var(--foreground) 20%, transparent);
-    --diagram-wire-strong: color-mix(in oklab, var(--foreground) 46%, transparent);
-    --diagram-plate: color-mix(in oklab, var(--foreground) 88%, transparent);
-    --diagram-plate-dim: color-mix(in oklab, var(--foreground) 32%, transparent);
-  }
-}
-
-@layer utilities {
-  /* Grid paper, scoped to a diagram canvas. Flat tiling, no vignette mask:
-     diagrams are framed by their container, not faded like the page ground. */
-  .spire-paper {
-    background-image:
-      linear-gradient(to right, var(--diagram-grid) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--diagram-grid) 1px, transparent 1px);
-    background-size: 28px 28px;
-  }
-
-  /* Display and title type. Optical sizing: tight leading and negative
-     tracking that eases as the text gets smaller (Apple's size-specific
-     tracking discipline), so nothing is one fixed letter-spacing value. */
-  .text-display {
-    font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
-    line-height: 1.02;
-    letter-spacing: -0.04em;
-    font-weight: 600;
-  }
-  .text-title {
-    font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
-    line-height: 1.08;
-    letter-spacing: -0.032em;
-    font-weight: 600;
-  }
-
-  /*
-   * Wire drawing. `pathLength="1"` on the <path> makes the dash math
-   * resolution-independent: a wire of any length draws in the same relative
-   * motion. Starts fully hidden so the reveal is the only time it is seen
-   * undrawn, then holds drawn once `[data-revealed]` sets stroke-dashoffset
-   * to 0. One-shot, so it never replays on repeated scroll-by.
-   */
-  .spire-wire {
-    fill: none;
-    stroke: var(--diagram-wire);
-    stroke-width: 1.25;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-  }
-  .spire-wire-strong {
-    stroke: var(--diagram-wire-strong);
-  }
-  [data-revealed="true"] .spire-wire-draw {
-    animation: spire-wire-draw 900ms var(--ease-in-out) both;
-    animation-delay: var(--wire-delay, 0ms);
-  }
-
-  /* A signal: a short blue dash travelling a drawn wire. Only present while
-     data is actually moving (a save, a fan-out), never a decorative loop. */
-  .spire-signal {
-    fill: none;
-    stroke: var(--spire-accent);
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-dasharray: 0.08 1;
-    opacity: 0;
-  }
-  [data-revealed="true"] .spire-signal-run {
-    animation: spire-signal-run 640ms var(--ease-in-out) both;
-    animation-delay: var(--signal-delay, 0ms);
-  }
-
-  /* Plate assembly: a checkpoint arriving. Starts low, faint and slightly
-     under scale (never scale(0)); settles with ease-out, the entering motion
-     this whole system is built from. */
-  .spire-plate {
-    transform-origin: center;
-  }
-  [data-revealed="true"] .spire-plate-in {
-    animation: spire-plate-in 420ms var(--ease-out) both;
-    animation-delay: var(--plate-delay, 0ms);
-  }
-
-  /*
-   * On-demand variants of the signal and plate motion, played by remounting
-   * the element (a changed `key`) rather than by `[data-revealed]`. Used for
-   * a user-triggered moment: clicking a file node in the hero "saves" it.
-   */
-  .spire-signal-pulse {
-    animation: spire-signal-run 640ms var(--ease-in-out) both;
-  }
-  .spire-plate-pulse {
-    animation: spire-plate-pulse 360ms var(--ease-out) both;
-  }
-
-  /* Generic staged-reveal stagger: pair with `style={{ "--i": index }}` on
-     children of a `[data-revealed]` ancestor. 60ms steps, inside the
-     30-80ms band the motion skills call for. */
-  .spire-stagger {
-    opacity: 0;
-    transform: translate3d(0, 6px, 0);
-  }
-  [data-revealed="true"] .spire-stagger {
-    animation: spire-rise 420ms var(--ease-out) both;
-    animation-delay: calc(var(--i, 0) * 60ms);
-  }
-}
-
-@keyframes spire-wire-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes spire-signal-run {
-  0% {
-    opacity: 0;
-    stroke-dashoffset: 1;
-  }
-  8% {
-    opacity: 1;
-  }
-  92% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes spire-plate-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes spire-plate-pulse {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -467,19 +281,6 @@
   }
 }
 
-/*
- * Server-highlighted code (Shiki, dual theme). Light colours are inline;
- * dark mode swaps in the --shiki-dark values Shiki writes beside them.
- */
-.spire-shiki pre {
-  margin: 0;
-  background: transparent !important;
-}
-.dark .spire-shiki pre,
-.dark .spire-shiki span {
-  color: var(--shiki-dark) !important;
-}
-
 @keyframes spire-live-ring {
   0% {
     opacity: 0.55;
@@ -501,29 +302,11 @@
   }
 }
 
-@media (scripting: none) {
-  .spire-reveal {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @media (prefers-reduced-transparency: reduce) {
   .spire-glass {
     background: var(--background);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-  }
-}
-
-@keyframes spire-caret {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
   }
 }
 
@@ -545,53 +328,15 @@
   .spire-rise {
     animation: none;
   }
-  .spire-caret-el {
-    animation: none;
-    opacity: 1;
-  }
   .spire-live-ring::after {
     animation: none;
     opacity: 0;
-  }
-  /*
-   * Reveals keep a short fade but lose the movement: gentler, not absent,
-   * so content still arrives rather than popping in.
-   */
-  .spire-reveal {
-    transform: none;
-    transition: opacity 200ms ease;
-  }
-
-  /*
-   * Diagrams: every wire, signal and plate lands in its finished state
-   * immediately. The information the diagram carries survives; only the
-   * choreography that explained it is gone.
-   */
-  .spire-wire-draw,
-  .spire-signal-run,
-  .spire-plate-in,
-  .spire-stagger,
-  .spire-signal-pulse,
-  .spire-plate-pulse {
-    animation: none !important;
-  }
-  .spire-wire {
-    stroke-dashoffset: 0;
-  }
-  .spire-signal,
-  .spire-signal-pulse {
-    opacity: 0;
-  }
-  .spire-plate,
-  .spire-stagger {
-    opacity: 1;
-    transform: none;
   }
 }
 
 /*
  * Theme toggle. The default view-transition crossfades the two root snapshots;
- * we drive our own circular clip instead (see `ModeToggle`), so silence the
+ * we drive our own circular clip instead (see `ThemeSwitch`), so silence the
  * built-in animation and paint the incoming theme on top of the outgoing one.
  */
 ::view-transition-old(root),
@@ -606,4 +351,231 @@
 
 ::view-transition-new(root) {
   z-index: 2;
+}
+
+/*
+ * Landing page ("rails"). The page is one column framed by two hairline
+ * rails; sections are divided by full-bleed hairlines, and where a divider
+ * crosses a rail it gets a small diamond joint. Hatched bands are the
+ * spacers between chapters. All of it is drawn in CSS so it costs no DOM.
+ */
+@layer utilities {
+  .biga-hatch {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--hatch) 0 1px,
+      transparent 1px 7px
+    );
+  }
+
+  /* Diamond joints on the two bottom corners of a railed box. */
+  .biga-joints {
+    position: relative;
+  }
+  .biga-joints::before,
+  .biga-joints::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    bottom: -4.5px;
+    width: 8px;
+    height: 8px;
+    rotate: 45deg;
+    background: var(--background);
+    border: 1px solid var(--rail);
+    pointer-events: none;
+  }
+  .biga-joints::before {
+    left: -4.5px;
+  }
+  .biga-joints::after {
+    right: -4.5px;
+  }
+
+  /*
+   * Marker highlight. `box-decoration-break: clone` repeats the padding and
+   * radius on every line a highlighted phrase wraps onto, so it reads as a
+   * highlighter stroke rather than one ragged box.
+   */
+  .biga-mark {
+    background: var(--brand-mark);
+    color: var(--brand-mark-foreground);
+    border-radius: 0.25em;
+    padding: 0 0.18em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  /* The highlighter draws on, left to right, once the phrase scrolls in. */
+  .biga-mark-draw {
+    background: linear-gradient(var(--brand-mark), var(--brand-mark)) no-repeat
+      0 0 / 0% 100%;
+    color: inherit;
+    transition:
+      background-size 700ms var(--ease-out),
+      color 300ms var(--ease-out) 250ms;
+  }
+  [data-revealed="true"] .biga-mark-draw,
+  .biga-mark-draw[data-revealed="true"] {
+    background-size: 100% 100%;
+    color: var(--brand-mark-foreground);
+  }
+
+  .biga-landing ::selection {
+    background: var(--brand-mark);
+    color: var(--brand-mark-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biga-mark-draw {
+    transition: none;
+  }
+}
+
+@media (scripting: none) {
+  .biga-mark-draw {
+    background-size: 100% 100%;
+    color: var(--brand-mark-foreground);
+  }
+}
+
+@layer utilities {
+  /* The footer wordmark: outlined, filled with the band hatch. */
+  .biga-wordmark {
+    color: transparent;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      color-mix(in oklab, var(--foreground) 16%, transparent) 0 1px,
+      transparent 1px 6px
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 1px color-mix(in oklab, var(--foreground) 22%, transparent);
+  }
+}
+
+/*
+ * Inputs stay at 16px on phones so iOS Safari doesn't zoom the page on
+ * focus; this draws them at the surrounding size instead (13px by default)
+ * by scaling the box, and widens it by the same factor so the visible width
+ * is unchanged. The parent clips the overflow.
+ */
+@media (max-width: 639.98px) {
+  .biga-shrink {
+    font-size: 16px;
+    width: calc(100% / var(--shrink, 0.8125));
+    max-width: none;
+    transform: scale(var(--shrink, 0.8125));
+    transform-origin: left center;
+  }
+}
+
+/*
+ * Highlighted code on the landing page (`StaticCode`). Each token carries its
+ * light and dark colour as variables; the theme class picks one.
+ */
+@layer utilities {
+  .showcase-token {
+    color: var(--l);
+  }
+  .dark .showcase-token {
+    color: var(--d);
+  }
+  .tab-2 {
+    tab-size: 2;
+  }
+  .tab-4 {
+    tab-size: 4;
+  }
+}
+
+/*
+ * Stage bands. A chapter marked `stage` is scoped to the dark palette (the
+ * `dark` class on the section re-resolves every token inside it) and painted
+ * with a dot grid and a green glow from its top edge, so the page alternates
+ * between airy and loud chapters in either theme.
+ */
+@layer utilities {
+  .biga-stage {
+    --background: var(--stage);
+    position: relative;
+    isolation: isolate;
+    background: var(--stage);
+    color: var(--foreground);
+  }
+  .biga-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 26rem at 50% -8%, color-mix(in oklab, var(--brand) 20%, transparent), transparent 72%),
+      radial-gradient(color-mix(in oklab, var(--foreground) 16%, transparent) 1px, transparent 1.3px) 0 0 / 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+  }
+
+  /* A soft green glow and dot grid for light surfaces (the hero). */
+  .biga-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(46rem 24rem at 78% 30%, color-mix(in oklab, var(--brand-mark) 30%, transparent), transparent 70%),
+      radial-gradient(color-mix(in oklab, var(--foreground) 14%, transparent) 1px, transparent 1.3px) 0 0 / 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+  }
+
+  /* The use-case ticker: one copy slides left by its own width, forever. */
+  .biga-marquee-track {
+    animation: biga-marquee 48s linear infinite;
+  }
+  .biga-marquee:hover .biga-marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes biga-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biga-marquee-track {
+    animation: none;
+  }
+}
+
+/*
+ * Documentation. Fumadocs reads the site's own tokens (shadcn.css maps
+ * --color-fd-* to them); what is left is the accent, which is biga green
+ * ("read this"), and the display face on headings.
+ */
+:root,
+.dark {
+  --color-fd-primary: var(--brand-text);
+  --color-fd-primary-foreground: var(--background);
+}
+
+.fd-docs h1,
+.fd-docs h2,
+.fd-docs h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+.fd-docs h1 {
+  font-weight: 800;
+}
+.fd-docs ::selection {
+  background: var(--brand-mark);
+  color: var(--brand-mark-foreground);
 }

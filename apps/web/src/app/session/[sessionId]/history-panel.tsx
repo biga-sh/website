@@ -71,8 +71,8 @@ export function DiffStat({
 }
 
 /**
- * The rail beside each checkpoint. The newest checkpoint's marker is Spire
- * blue, the same accent as the top plate of the logo: it is "now".
+ * The rail beside each checkpoint. The newest checkpoint's marker is the viewer
+ * blue, the accent that means "now".
  */
 function RailMarker({ first, last, latest }: { first: boolean; last: boolean; latest: boolean }) {
     return (

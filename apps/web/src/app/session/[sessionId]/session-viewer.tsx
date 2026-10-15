@@ -120,7 +120,7 @@ export function SessionViewer({
     // A browser tab titled with the session's name is easier to find again.
     useEffect(() => {
         if (session) {
-            document.title = `${displayTitle(session)} · Spire`;
+            document.title = `${displayTitle(session)} · biga`;
         }
     }, [session]);
 

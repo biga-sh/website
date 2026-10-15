@@ -6,7 +6,7 @@ import { useViewerPrefsStore } from "@spire/stores/viewer-prefs-store";
 import { LinkIcon, LocateFixedIcon, PanelLeftIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 
-import { SpireMark } from "@/components/spire-mark";
+import { BigaMark } from "@/components/site/biga-mark";
 import { ThemePicker } from "@/components/theme-picker";
 import { Button } from "@/components/ui/button";
 import { Kbd, useModKey } from "@/components/ui/kbd";
@@ -157,7 +157,7 @@ export function SessionHeader({
     onOpenQuickOpen: () => void;
 }) {
     const session = useSessionStore((state) => state.session);
-    const title = session ? displayTitle(session) : "Spire session";
+    const title = session ? displayTitle(session) : "biga session";
     const description = session?.description ?? null;
     const canFollow = status === "live" || status === "reconnecting";
 
@@ -173,10 +173,10 @@ export function SessionHeader({
             <Link
                 href="/"
                 target={embed ? "_top" : undefined}
-                aria-label="Spire home"
+                aria-label="biga home"
                 className="hover:bg-accent focus-visible:ring-ring/50 hidden size-8 shrink-0 place-items-center rounded-md transition-colors outline-none focus-visible:ring-[3px] sm:grid"
             >
-                <SpireMark size={18} />
+                <BigaMark cell={2} className="text-foreground" />
             </Link>
             <span aria-hidden className="bg-border hidden h-4 w-px shrink-0 sm:block" />
             <div className="flex min-w-0 flex-1 items-baseline gap-2 pl-0.5">

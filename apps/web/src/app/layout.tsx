@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistPixelSquare } from "geist/font/pixel";
+import { Bricolage_Grotesque, Geist, Geist_Mono, Manrope } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,8 +16,21 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
+/* Marketing faces. The viewer and docs stay on Geist; the landing page and
+   site chrome set display type in Bricolage, body copy in Manrope and the
+   small annotations in Geist Pixel. */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+});
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const title = "Spire: live code sharing without a screen share";
+const title = "biga: stream your saves, not your screen";
 const description =
   "Broadcast the files you're working on to a browser tab. Run one command, share the link, and anyone can follow along as you save. Read-only, syntax-highlighted, no account or install.";
 
@@ -24,10 +38,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: title,
-    template: "%s · Spire",
+    template: "%s · biga",
   },
   description,
-  applicationName: "Spire",
+  applicationName: "biga",
   keywords: [
     "live code sharing",
     "pair programming",
@@ -41,7 +55,7 @@ export const metadata: Metadata = {
   authors: [{ name: "ZenshiLabs" }],
   openGraph: {
     type: "website",
-    siteName: "Spire",
+    siteName: "biga",
     title,
     description,
     url: siteUrl,
@@ -79,7 +93,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${manrope.variable} ${GeistPixelSquare.variable} font-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"

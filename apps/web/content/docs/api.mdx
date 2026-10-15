@@ -1,0 +1,91 @@
+---
+title: HTTP API
+description: The endpoints the CLI and the viewer use, with their limits and responses.
+---
+
+The CLI and the viewer talk to the same REST API under `/api/sessions`. It is
+stable enough to script against, but it is the protocol between biga's own
+programs, so treat it as an implementation detail that can change between
+releases.
+
+## Conventions
+
+Every JSON response is wrapped in an envelope:
+
+```json title="success"
+{ "ok": true, "data": { } }
+```
+
+```json title="failure"
+{ "ok": false, "error": { "code": "not_found", "message": "Session was not found." } }
+```
+
+| Status | `error.code` | Meaning |
+| --- | --- | --- |
+| 400 | `invalid_request` | The body or a parameter is malformed. |
+| 404 | `not_found` | No such session, checkpoint or file version. |
+| 409 | `invalid_state`, `inactive_session` | The session has ended. |
+| 413 | `payload_too_large` | The body is over the endpoint's limit. |
+| 429 | `rate_limited` | Slow down; see the limits below. |
+
+There is no authentication. Possessing the session ID is the permission to
+watch it; writes are not separately protected, so don't expect a session to be
+private beyond an unguessable ID.
+
+## Endpoints
+
+### Used by the CLI
+
+| Method | Path | Does |
+| --- | --- | --- |
+| `PUT` | `/api/sessions/:id` | Creates the session, or reactivates it. |
+| `DELETE` | `/api/sessions/:id` | Ends the session. |
+| `POST` | `/api/sessions/:id/snapshot` | Replaces the whole tree. Answers `202`. |
+| `POST` | `/api/sessions/:id/checkpoint` | Records one batch of changes. Answers `202`. |
+| `GET` | `/api/sessions/:id/manifest` | Path, hash and size of every file, for rejoining. Never cached. |
+| `POST` | `/api/sessions/:id/heartbeat` | Says the broadcast is still alive. |
+
+### Used by the viewer
+
+| Method | Path | Does |
+| --- | --- | --- |
+| `GET` | `/api/sessions/:id` | The session's title and status. |
+| `GET` | `/api/sessions/:id/state` | Session, recent checkpoints, tree and, for small sessions, contents. |
+| `GET` | `/api/sessions/:id/stream` | Server-sent events. |
+| `GET` | `/api/sessions/:id/checkpoints` | A page of checkpoint summaries. `limit`, `before`. |
+| `GET` | `/api/sessions/:id/checkpoints/:seq` | One checkpoint with its changes. |
+| `GET` | `/api/sessions/:id/file` | A file's content. `path`, and `ref`: a SHA-256, `latest` or a checkpoint number. |
+| `GET` | `/api/sessions/:id/file/history` | The checkpoints that touched a path. `path`, `limit`, `before`. |
+
+## Uploads
+
+Upload bodies are gzip-compressed when the server advertises support, by
+sending an `Accept-Encoding: gzip` response header (RFC 7694). A server that
+doesn't gets plain JSON, and a `415` makes the CLI fall back too.
+
+| Endpoint | Largest body | Rate limit |
+| --- | --- | --- |
+| `snapshot` | 32 MiB | 15 per minute, per session |
+| `checkpoint` | 8 MiB | 240 per minute, per session |
+| `PUT` session | 16 KiB | 30 per hour, per client IP |
+| `heartbeat` | none | 30 per minute, per session |
+
+The CLI splits a large change set across several checkpoints, each under 6 MB
+uncompressed, so a branch switch stays inside the 8 MiB limit.
+
+## Events
+
+`GET /api/sessions/:id/stream` is a `text/event-stream`. Each message has an
+`event:` name and a JSON `data:` payload with the event's `type`,
+`sessionId` and `timestamp`. Comment lines (`: keepalive …`) are sent
+periodically and carry nothing.
+
+| `type` | Payload |
+| --- | --- |
+| `connected` | The session ID and the server's time. |
+| `checkpoint` | A full checkpoint: `seq`, `label`, counts and `changes`. |
+| `snapshot` | The new tree. |
+| `session_ended` | Nothing more. The stream closes after it. |
+
+The server closes the stream with `session_ended` when the broadcast has gone
+quiet for too long, and ends it when the client disconnects.

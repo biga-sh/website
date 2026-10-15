@@ -230,7 +230,7 @@ export function CodeViewer({
             <EmptyState
                 icon={FileIcon}
                 title="Binary file"
-                description="Spire lists binary files but never uploads their contents, so there's nothing to preview."
+                description="biga lists binary files but never uploads their contents, so there's nothing to preview."
             />
         );
     } else if (current.loading) {

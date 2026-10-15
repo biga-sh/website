@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 import { JoinForm } from "@/components/landing/join-form";
-import { SpireMark } from "@/components/spire-mark";
+import { BigaMark } from "@/components/site/biga-mark";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
-        <SpireMark size={40} />
+        <BigaMark cell={5} className="text-foreground" />
         <h1 className="mt-6 text-2xl font-semibold tracking-[-0.02em]">
           Page not found
         </h1>

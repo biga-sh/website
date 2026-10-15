@@ -145,7 +145,7 @@ export function CheckpointDiffPane({
             <EmptyState
                 icon={FileIcon}
                 title="Binary file"
-                description="Spire lists binary files but never uploads their contents, so there's no diff to show."
+                description="biga lists binary files but never uploads their contents, so there's no diff to show."
             />
         );
     } else if (before.loading || after.loading) {

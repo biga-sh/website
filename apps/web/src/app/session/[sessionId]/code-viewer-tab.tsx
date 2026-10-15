@@ -42,7 +42,18 @@ export function OpenTabs({
     // closed from the keyboard so focus never falls to the page.
     useEffect(() => {
         const active = listRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
-        active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+        // Scroll the tab strip itself. `scrollIntoView` would also scroll every
+        // ancestor, and the page with it when the viewer is embedded in one.
+        const viewport = listRef.current?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]');
+        if (active && viewport) {
+            const tab = active.getBoundingClientRect();
+            const strip = viewport.getBoundingClientRect();
+            if (tab.left < strip.left) {
+                viewport.scrollLeft -= strip.left - tab.left;
+            } else if (tab.right > strip.right) {
+                viewport.scrollLeft += tab.right - strip.right;
+            }
+        }
         if (refocusActive.current) {
             refocusActive.current = false;
             active?.focus();

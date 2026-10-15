@@ -2,154 +2,97 @@ import { ImageResponse } from "next/og";
 
 import { DEMO_SESSION_ID } from "@/lib/demo-session";
 
-export const runtime = "edge";
-export const alt = "Spire: share the code, not your screen";
+export const alt = "biga: stream your saves, not your screen";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const GROUND = "#0d1016";
-const CARD = "#111621";
-const BORDER = "#232936";
-const FG = "#f5f7fb";
-const MUTED = "#98a2b3";
-const RAIL = "#5b6675";
-const ACCENT = "#5b76ff"; // oklch(0.6173 0.2057 267.32) — the dark accent.
+// The landing page's dark tokens, as sRGB (Satori has no oklch()).
+const GROUND = "#0b0c0e";
+const CARD = "#0d1014";
+const RAIL = "rgba(255,255,255,0.10)";
+const HATCH = "rgba(255,255,255,0.07)";
+const FG = "#f4f5f6";
+const MUTED = "#9b9fa5";
+const MARK = "#63e197"; // --brand-mark
+const MARK_FG = "#09090b";
 
-const MONO =
-  "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace";
+const MONO = "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const bareShare = `${siteUrl}/session/${DEMO_SESSION_ID}`.replace(
-  /^https?:\/\//,
-  ""
-);
+const share = `${siteUrl}/session/${DEMO_SESSION_ID}`.replace(/^https?:\/\//, "");
 
-function SpireMark() {
-  const plate = (width: number, color: string, rotate: number) => (
-    <div
-      style={{
-        width,
-        height: 8,
-        borderRadius: 4,
-        background: color,
-        transform: `rotate(${rotate}deg)`,
-      }}
-    />
-  );
-
-  return (
-    <div
-      style={{
-        width: 60,
-        height: 60,
-        borderRadius: 15,
-        background: "#161b26",
-        border: `1px solid ${BORDER}`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-      }}
-    >
-      {plate(26, ACCENT, 6)}
-      {plate(29, "#e8ebf2", -6)}
-      {plate(31, "#e8ebf2", 6)}
-    </div>
-  );
-}
-
-type Seg = { t: string; c: string; caret?: boolean };
-
-const TERMINAL_LINES: { glyph: string; glyphColor: string; segs: Seg[] }[] = [
-  {
-    glyph: "$",
-    glyphColor: ACCENT,
-    segs: [{ t: "npx @zenshilabs/spire start", c: FG }],
-  },
-  {
-    glyph: "●",
-    glyphColor: ACCENT,
-    segs: [
-      { t: "spire", c: MUTED },
-      { t: "→", c: RAIL },
-      { t: bareShare, c: ACCENT },
-    ],
-  },
-  {
-    glyph: "●",
-    glyphColor: ACCENT,
-    segs: [{ t: `Started ${DEMO_SESSION_ID}.`, c: FG }],
-  },
-  {
-    glyph: "●",
-    glyphColor: ACCENT,
-    segs: [{ t: "Watching for changes.", c: MUTED, caret: true }],
-  },
-  {
-    glyph: "●",
-    glyphColor: RAIL,
-    segs: [{ t: "Synced checkpoint #2 · 2 files", c: RAIL }],
-  },
+/** The pixel "b" from the site mark, with its green "just saved" cell. */
+const CELLS = [
+  [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
+  [1, 2], [2, 2], [3, 2],
+  [4, 3], [4, 4], [4, 5],
+  [1, 6], [2, 6], [3, 6],
 ];
 
-function Chip({ label }: { label: string }) {
+const HEADLINE = "Stream your saves, not your screen.";
+const SUBTEXT = "One command turns a folder into a live, read-only link.";
+const STATUS = "4 checkpoints, 48 files";
+
+/**
+ * A Google font, subset to `text`. Google Fonts serves TTF (which Satori can
+ * read) to a client that doesn't ask for woff2. Null if the fetch fails, so
+ * the card still renders in the default face.
+ */
+async function googleFont(family: string, weight: number, text: string): Promise<ArrayBuffer | null> {
+  try {
+    const query = `family=${family.replace(/ /g, "+")}:wght@${weight}&text=${encodeURIComponent(text)}`;
+    const css = await (await fetch(`https://fonts.googleapis.com/css2?${query}`)).text();
+    const url = /src: url\((.+?)\) format\('(?:opentype|truetype)'\)/.exec(css)?.[1];
+    if (!url) return null;
+    const response = await fetch(url);
+    return response.ok ? await response.arrayBuffer() : null;
+  } catch {
+    return null;
+  }
+}
+
+function Mark({ cell }: { cell: number }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        background: "#12161f",
-        border: `1px solid ${BORDER}`,
-        borderRadius: 999,
-        padding: "8px 16px",
-        color: MUTED,
-        fontSize: 18,
-        fontFamily: MONO,
-      }}
-    >
-      {label}
+    <div style={{ position: "relative", width: cell * 5, height: cell * 7, display: "flex" }}>
+      {CELLS.map(([x, y]) => (
+        <div
+          key={`${x}-${y}`}
+          style={{ position: "absolute", left: x! * cell, top: y! * cell, width: cell, height: cell, background: FG }}
+        />
+      ))}
+      <div style={{ position: "absolute", left: 4 * cell, top: 0, width: cell, height: cell, background: MARK }} />
     </div>
   );
 }
 
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  const [bricolage, manrope, mono] = await Promise.all([
+    googleFont("Bricolage Grotesque", 800, `${HEADLINE}biga`),
+    googleFont("Manrope", 500, SUBTEXT),
+    googleFont("Geist Mono", 400, `$ biga start live ${share} ${STATUS}`),
+  ]);
+  const fonts = [
+    bricolage && { name: "Bricolage", data: bricolage, weight: 800 as const, style: "normal" as const },
+    manrope && { name: "Manrope", data: manrope, weight: 500 as const, style: "normal" as const },
+    mono && { name: "Geist Mono", data: mono, weight: 400 as const, style: "normal" as const },
+  ].filter((font) => font !== null);
+
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          background: GROUND,
-          fontFamily: "sans-serif",
-          position: "relative",
-        }}
-      >
-        {/* Blueprint grid. */}
+      <div style={{ width: "100%", height: "100%", display: "flex", background: GROUND, fontFamily: "sans-serif" }}>
+        {/* Rails and the hatched band under the header, as on the page. */}
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: 56, width: 1, background: RAIL }} />
+        <div style={{ position: "absolute", top: 0, bottom: 0, right: 56, width: 1, background: RAIL }} />
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: "48px 48px",
-          }}
-        />
-        {/* Vignette that fades the grid to ground, strongest top-centre — the
-            mask-image the site uses isn't available in Satori. */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(120% 90% at 50% -12%, transparent 42%, ${GROUND} 100%)`,
-          }}
-        />
-        {/* Electric-blue bloom behind the headline. */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(44% 42% at 27% 4%, rgba(45,91,255,0.32), transparent 72%)`,
+            top: 108,
+            left: 56,
+            right: 56,
+            height: 22,
+            borderTop: `1px solid ${RAIL}`,
+            borderBottom: `1px solid ${RAIL}`,
+            backgroundImage: `repeating-linear-gradient(-45deg, ${HATCH} 0 1px, transparent 1px 8px)`,
           }}
         />
 
@@ -160,176 +103,95 @@ export default function OpengraphImage() {
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "60px 68px",
+            padding: "38px 96px 60px",
           }}
         >
-          {/* Wordmark. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <SpireMark />
-            <div
-              style={{
-                color: FG,
-                fontSize: 34,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Spire
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Mark cell={5} />
+            <div style={{ color: FG, fontSize: 36, fontWeight: 800, letterSpacing: "-0.04em", fontFamily: "Bricolage" }}>
+              biga
             </div>
           </div>
 
-          {/* Body: headline left, terminal right. */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 52,
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", width: 500 }}>
+          <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between", gap: 40, paddingTop: 70 }}>
+            <div style={{ display: "flex", flexDirection: "column", width: 580 }}>
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  color: ACCENT,
-                  fontSize: 17,
-                  fontWeight: 600,
-                  letterSpacing: "0.22em",
-                  fontFamily: MONO,
-                }}
-              >
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: ACCENT,
-                  }}
-                />
-                LIVE CODE SHARING
-              </div>
-
-              <div
-                style={{
-                  color: FG,
-                  fontSize: 68,
-                  fontWeight: 600,
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.035em",
-                  marginTop: 22,
                   display: "flex",
                   flexDirection: "column",
+                  color: FG,
+                  fontFamily: "Bricolage",
+                  fontSize: 58,
+                  fontWeight: 800,
+                  lineHeight: 1.06,
                 }}
               >
-                <div>Share the code.</div>
-                <div style={{ color: MUTED }}>Not your screen.</div>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div style={{ display: "flex", flexShrink: 0, whiteSpace: "nowrap" }}>Stream your</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexShrink: 0,
+                      marginLeft: 16,
+                      padding: "0 12px 4px",
+                      borderRadius: 14,
+                      background: MARK,
+                      color: MARK_FG,
+                    }}
+                  >
+                    saves
+                  </div>
+                  <div style={{ display: "flex" }}>,</div>
+                </div>
+                <div style={{ display: "flex" }}>not your screen.</div>
               </div>
-
-              <div
-                style={{
-                  color: MUTED,
-                  fontSize: 21,
-                  lineHeight: 1.5,
-                  marginTop: 24,
-                  maxWidth: 440,
-                }}
-              >
-                Run one command. The files you save stream to a browser tab,
-                read-only, with no account.
+              <div style={{ color: MUTED, fontFamily: "Manrope", fontSize: 24, lineHeight: 1.45, marginTop: 26, maxWidth: 500 }}>
+                {SUBTEXT}
               </div>
             </div>
 
-            {/* Terminal card. */}
             <div
               style={{
-                width: 528,
+                width: 360,
                 display: "flex",
                 flexDirection: "column",
+                gap: 12,
                 background: CARD,
-                border: `1px solid ${BORDER}`,
+                border: `1px solid ${RAIL}`,
                 borderRadius: 18,
-                boxShadow: "0 40px 90px -30px rgba(0,0,0,0.75)",
+                padding: "24px 26px",
+                fontFamily: `'Geist Mono', ${MONO}`,
+                fontSize: 19,
+                color: FG,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "16px 22px",
-                  borderBottom: `1px solid #1b2130`,
-                }}
-              >
-                <div
-                  style={{
-                    width: 9,
-                    height: 9,
-                    borderRadius: 999,
-                    background: "#3a4252",
-                  }}
-                />
-                <div style={{ color: RAIL, fontSize: 17, fontFamily: MONO }}>
-                  ~/spire
-                </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <span style={{ color: MARK }}>$</span>
+                <span>biga start</span>
               </div>
-
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 15,
-                  padding: "24px 24px 26px",
-                  fontFamily: MONO,
-                  fontSize: 20,
+                  gap: 8,
+                  marginTop: 6,
+                  padding: "16px 18px",
+                  border: `1px solid ${RAIL}`,
+                  borderRadius: 12,
                 }}
               >
-                {TERMINAL_LINES.map((line, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div
-                      style={{
-                        width: 16,
-                        color: line.glyphColor,
-                        display: "flex",
-                      }}
-                    >
-                      {line.glyph}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {line.segs.map((seg, j) => (
-                        <div key={j} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ color: seg.c }}>{seg.t}</span>
-                          {seg.caret ? (
-                            <div
-                              style={{
-                                width: 10,
-                                height: 22,
-                                borderRadius: 2,
-                                background: ACCENT,
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: 9, background: MARK }} />
+                  <span style={{ color: MARK }}>live</span>
+                </div>
+                <div style={{ display: "flex", color: FG, fontSize: 15 }}>{share}</div>
+                <div style={{ display: "flex", color: MUTED, fontSize: 17 }}>{STATUS}</div>
               </div>
             </div>
-          </div>
-
-          {/* Value props. */}
-          <div style={{ display: "flex", gap: 12 }}>
-            <Chip label="no account" />
-            <Chip label="no install" />
-            <Chip label="syntax-highlighted" />
-            <Chip label="rewind any save" />
           </div>
         </div>
       </div>
     ),
-    size
+    { ...size, fonts: fonts.length ? fonts : undefined }
   );
 }

@@ -1,0 +1,50 @@
+---
+title: What gets shared
+description: Exactly which files leave your machine, and which never do.
+---
+
+Share links are public, so biga leaves out anything that looks like a
+credential, and only reads what a viewer could ever see.
+
+## What is excluded
+
+Everything under the broadcast directory is shared **except**:
+
+- paths matched by any `.gitignore`, at any depth, with git's precedence rules,
+  plus `.git/info/exclude` and your global git excludes file
+  (`core.excludesFile`)
+- paths matched by any `.bigaignore`, which uses the same syntax for rules that
+  apply only to broadcasting
+- `node_modules/`, `.git/` and `.DS_Store`
+- credentials: `.env` and `.env.*` (but not `.env.example`, `.env.sample` or
+  `.env.template`), `*.pem`, `*.key`, `*.p12`, `*.pfx`, SSH keys (`id_rsa*`,
+  `id_dsa*`, `id_ecdsa*`, `id_ed25519*`), `.npmrc`, `.pypirc`, `.netrc`, and
+  the `.ssh/`, `.aws/` and `.gnupg/` directories
+- symlinks and special files
+
+Ignore files are read from every directory, `.gitignore` first and then
+`.bigaignore`, so a `.bigaignore` rule wins over a `.gitignore` rule beside it.
+Matching is case-insensitive on macOS and Windows.
+
+<Callout type="info" title="Re-including a default">
+To share one of the default exclusions anyway, re-include it in a
+`.bigaignore`, for example `!.npmrc`.
+</Callout>
+
+Editing an ignore file while broadcasting takes effect immediately: newly
+ignored files disappear for viewers, and newly included ones appear.
+
+## Listed, never read
+
+| What | What a viewer sees |
+| --- | --- |
+| Build output: `dist`, `.next`, `build`, `out`, `coverage`, `.build` | An empty folder. Its contents are never watched, hashed or uploaded. |
+| Binary files (any NUL byte) | The file in the tree, with a placeholder. The bytes stay on your machine. |
+| Files over 2 MB | The file in the tree, with a placeholder. |
+
+## What travels
+
+On each checkpoint the CLI hashes the files it read with SHA-256 and uploads
+only those whose hash changed. A save that changes nothing sends nothing.
+Uploads are gzip-compressed when the server supports it, which typically cuts
+source code to a third of its size.

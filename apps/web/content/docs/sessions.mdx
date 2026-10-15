@@ -1,0 +1,61 @@
+---
+title: Sessions
+description: How session IDs are chosen, how rejoining works, and what happens when the connection drops.
+---
+
+A session is one broadcast of one directory. Its ID is the share link: there
+are no accounts, and anyone with the link can watch.
+
+## Choosing the ID
+
+`biga start` picks the session ID in this order:
+
+1. `--session <id>`, if given.
+2. The ID saved for this directory, which **rejoins** the same share URL.
+3. A new random 8-character ID, saved for next time.
+
+An explicit ID must start with a letter or digit and contain only letters,
+digits, `_` and `-`, up to 64 characters.
+
+## Lifecycle
+
+```mermaid title="A session's lifecycle" summary="A session becomes active when biga start creates it. It stays active while checkpoints and heartbeats arrive. It ends when you stop the broadcast, or when no heartbeat has arrived for 45 seconds. An ended session becomes active again when biga start rejoins it, and is deleted by the retention sweep after the retention period." caption="Ending is not deleting: an ended session stays viewable, and the same link wakes up when the folder is started again."
+stateDiagram-v2
+  [*] --> active: biga start
+  active --> active: checkpoints and heartbeats
+  active --> ended: stopped with q, Ctrl+C or biga stop
+  active --> ended: no heartbeat for 45 s
+  ended --> active: biga start again, rejoins
+  ended --> [*]: retention sweep, after 30 days
+```
+
+## Rejoining
+
+On rejoin the CLI compares your local files with the server's copy and uploads
+only what changed. Local files are always the source of truth, so a crash, a
+server restart or a dropped connection is fixed by running the same command
+again.
+
+```text
+◇  Rejoined biga (k3f9zq2a) — already in sync
+◇  Rejoined biga (k3f9zq2a) — synced 1 changed file, 1.1 KB
+```
+
+Stopping a broadcast ends its session for viewers, who see the final state and
+a note that it ended. Starting it again reactivates the same link.
+
+## When the server is unreachable
+
+The live panel switches to `reconnecting — changes are buffered`. Changes made
+while the server cannot be reached are buffered and sent when it comes back,
+and the panel says `Back online.`.
+
+## Local state
+
+The CLI keeps what it needs in `~/.biga` (or `$BIGA_HOME`):
+
+| Path | What it holds |
+| --- | --- |
+| `sessions.json` | Each broadcast directory's session. This is what keeps a project's link stable across restarts. |
+| `control/` | Stop requests from `biga stop`. |
+| `update-check.json` | The latest release version, cached for a day. |

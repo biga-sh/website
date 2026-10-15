@@ -1,3 +1,5 @@
+import { createMDX } from "fumadocs-mdx/next";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // ioredis is a native-ish server dependency — keep it external so it is
@@ -5,4 +7,6 @@ const nextConfig = {
     serverExternalPackages: ["ioredis", "@spire/redis", "@spire/server"],
 };
 
-export default nextConfig;
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);

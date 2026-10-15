@@ -44,9 +44,12 @@ const TONE = {
 export function JoinForm({
     tone = "terminal",
     className,
+    buttonClassName,
 }: {
     tone?: keyof typeof TONE;
     className?: string;
+    /** Overrides the submit button's fill, for surfaces with their own accent. */
+    buttonClassName?: string;
 }) {
     const router = useRouter();
     const id = useId();
@@ -105,7 +108,10 @@ export function JoinForm({
                 <Button
                     type="submit"
                     disabled={pending}
-                    className="group bg-spire-solid text-spire-foreground hover:bg-spire-solid/90 h-12 shrink-0 gap-2 rounded-full py-0 pr-1.5 pl-5 text-sm font-medium"
+                    className={cn(
+                        "group bg-spire-solid text-spire-foreground hover:bg-spire-solid/90 h-12 shrink-0 gap-2 rounded-full py-0 pr-1.5 pl-5 text-sm font-medium",
+                        buttonClassName
+                    )}
                 >
                     {pending ? "Opening…" : "Open session"}
                     <IconWell className="bg-spire-foreground/15">

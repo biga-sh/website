@@ -1,4 +1,5 @@
-import { cleanupSessions } from "@spire/server";
+import { cleanupSessions } from "@biga/server";
+import { envNumber } from "@/server/env";
 import { failure, routeHandler, success } from "@/server/http";
 import { run } from "@/server/runtime";
 import { PROTECTED_SESSION_IDS } from "@/lib/demo-session";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 const ABANDON_AFTER_MS = 24 * 60 * 60 * 1000;
 
 /** Ended sessions older than this many days are deleted (cascades to all data). */
-const RETENTION_DAYS = Number(process.env.SPIRE_RETENTION_DAYS) || 30;
+const RETENTION_DAYS = envNumber("RETENTION_DAYS", 30);
 
 /**
  * Scheduled retention sweep, invoked by Vercel Cron (see vercel.json) or any

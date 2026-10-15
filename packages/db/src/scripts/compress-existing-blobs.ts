@@ -17,7 +17,7 @@ import { blobs } from "../schema.js";
  * primary key so nothing is processed twice.
  *
  * Run after applying migration 0003, from anywhere:
- *   pnpm --filter @spire/db build
+ *   pnpm --filter @biga/db build
  *   node packages/db/dist/scripts/compress-existing-blobs.js
  */
 

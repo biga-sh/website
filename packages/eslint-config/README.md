@@ -1,3 +1,3 @@
-# `@spire/eslint-config`
+# `@biga/eslint-config`
 
-Shared ESLint flat configs for all packages and apps in the Spire monorepo.
+Shared ESLint flat configs for all packages and apps in the biga monorepo.

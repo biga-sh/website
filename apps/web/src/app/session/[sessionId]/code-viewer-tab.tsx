@@ -1,6 +1,6 @@
 "use client";
 
-import { baseName } from "@spire/types";
+import { baseName } from "@biga/types";
 import { XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 

@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { getCheckpoint } from "@spire/server";
+import { getCheckpoint } from "@biga/server";
 import { failure, routeHandler, success } from "@/server/http";
 
 type RouteContext = {

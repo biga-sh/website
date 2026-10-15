@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { RedisService } from "@spire/redis";
+import { RedisService } from "@biga/redis";
 
 import type { RateLimitConfig } from "./limits";
 import { run } from "./runtime";

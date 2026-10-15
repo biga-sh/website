@@ -1,5 +1,5 @@
-import { HASH_RE } from "@spire/types";
-import { getFileContent } from "@spire/server";
+import { HASH_RE } from "@biga/types";
+import { getFileContent } from "@biga/server";
 import { failure, routeHandler, success } from "@/server/http";
 import { run } from "@/server/runtime";
 

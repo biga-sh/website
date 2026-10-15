@@ -1,10 +1,11 @@
 "use client";
 
-import type { CheckpointChange } from "@spire/types";
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useSessionStore } from "@spire/stores/session-store";
+import type { CheckpointChange } from "@biga/types";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { migrateStorageKey } from "@biga/stores/migrate-storage";
+import { useSessionStore } from "@biga/stores/session-store";
 import { FilesIcon, GitGraphIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
@@ -30,6 +31,13 @@ import { firstDiffable, HistoryPanel } from "./history-panel";
 import { SessionHeader } from "./session-header";
 import { SessionNotice } from "./session-notice";
 import { SessionUnavailable } from "./session-unavailable";
+
+// react-resizable-panels saves the layout under this prefix; carry a layout saved
+// before the rename to biga over once.
+migrateStorageKey(
+    "react-resizable-panels:spire-viewer-layout",
+    "react-resizable-panels:biga-viewer-layout"
+);
 
 /** Mirrors the loaded layout so nothing jumps when the session arrives. */
 function ViewerSkeleton() {
@@ -319,7 +327,7 @@ export function SessionViewer({
                                         <GitGraphIcon />
                                         Timeline
                                         {unseenTimeline && view !== "timeline" && (
-                                            <span aria-label="new checkpoints" className="bg-spire size-1.5 rounded-full" />
+                                            <span aria-label="new checkpoints" className="bg-biga size-1.5 rounded-full" />
                                         )}
                                     </ToggleGroupItem>
                                 </ToggleGroup>
@@ -338,7 +346,7 @@ export function SessionViewer({
                     />
                     <ResizablePanelGroup
                         direction="horizontal"
-                        autoSaveId="spire-viewer-layout"
+                        autoSaveId="biga-viewer-layout"
                         onLayout={(sizes) => setSidebarCollapsed((sizes[0] ?? 0) === 0)}
                         className="min-h-0 flex-1"
                     >

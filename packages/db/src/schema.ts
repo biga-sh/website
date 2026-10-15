@@ -1,4 +1,4 @@
-import type { FileNode } from "@spire/types";
+import type { FileNode } from "@biga/types";
 import { sql } from "drizzle-orm";
 import {
     boolean,
@@ -60,7 +60,7 @@ export const sessions = pgTable(
             .notNull()
             .defaultNow(),
         endedAt: timestamp("ended_at", { withTimezone: true }),
-        // Links sessions started together from one `spire.json` workspace.
+        // Links sessions started together from one `biga.json` workspace.
         // Nullable; a future GET /api/groups/:groupId/sessions can surface a
         // sibling-sessions rail in the viewer.
         groupId: text("group_id"),

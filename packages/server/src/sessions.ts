@@ -1,10 +1,11 @@
-import * as DB from "@spire/db";
-import { RedisService } from "@spire/redis";
-import type { CreateSessionInput, SessionManifest, SessionResponse } from "@spire/types";
+import * as DB from "@biga/db";
+import { RedisService } from "@biga/redis";
+import type { CreateSessionInput, SessionManifest, SessionResponse } from "@biga/types";
 import { Effect } from "effect";
 
 import { cacheDel, cacheGet, cacheSet } from "./cache.js";
 import { fromDb } from "./db.js";
+import { envNumber } from "./env.js";
 import { DbError } from "./errors.js";
 import { broadcastSessionEvent } from "./pubsub.js";
 
@@ -13,7 +14,7 @@ export type EndSessionResult =
     | { ok: false; code: "not_found" | "already_ended" };
 
 const SESSION_CACHE_TTL = 30;
-const SESSION_STALE_MS = Number(process.env.SPIRE_SESSION_STALE_MS) || 45_000;
+const SESSION_STALE_MS = envNumber("SESSION_STALE_MS", 45_000);
 
 const sessionKey = (sessionId: string) => `sess:${sessionId}`;
 

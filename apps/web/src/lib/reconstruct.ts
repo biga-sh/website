@@ -1,4 +1,4 @@
-import type { FileNode } from "@spire/types";
+import type { FileNode } from "@biga/types";
 
 /**
  * Recursively collects the virtual paths of all binary files in the tree.

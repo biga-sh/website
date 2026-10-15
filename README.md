@@ -86,11 +86,12 @@ are in the [API reference](apps/web/content/docs/api.mdx).
 | `REDIS_URL` | no | A TCP `rediss://` URL. Enables cross-instance live events and a shared cache. |
 | `NEXT_PUBLIC_SITE_URL` | no | Public origin, for absolute metadata URLs. Defaults to `http://localhost:3000`. |
 | `CRON_SECRET` | for cleanup | Bearer token protecting `/api/cron/cleanup`. |
-| `SPIRE_RETENTION_DAYS` | no | Days an ended session is kept. Defaults to 30. |
-| `SPIRE_DEMO_SESSION_ID` | no | A session the cleanup never deletes. |
+| `BIGA_RETENTION_DAYS` | no | Days an ended session is kept. Defaults to 30. |
+| `BIGA_DEMO_SESSION_ID` | no | A session the cleanup never deletes. |
 
 The size limits, eager-loading thresholds and staleness window are tunable too;
-see [self-hosting](apps/web/content/docs/self-hosting.mdx).
+see [self-hosting](apps/web/content/docs/self-hosting.mdx). The `BIGA_` settings
+were `SPIRE_` before the rename, and the old spellings are still read.
 
 Live updates hold a connection open per viewer, so deploy on a long-running
 Node host. A purely serverless or edge deployment can't fan events out.

@@ -1,5 +1,5 @@
 {
-  "name": "@spire/server",
+  "name": "@biga/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,14 +17,14 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@spire/db": "workspace:*",
-    "@spire/redis": "workspace:*",
-    "@spire/types": "workspace:*",
+    "@biga/db": "workspace:*",
+    "@biga/redis": "workspace:*",
+    "@biga/types": "workspace:*",
     "diff": "^5.2.0",
     "effect": "^3.16.0"
   },
   "devDependencies": {
-    "@spire/typescript-config": "workspace:*",
+    "@biga/typescript-config": "workspace:*",
     "@types/diff": "^7.0.1",
     "@types/node": "^22.15.3",
     "typescript": "5.9.2"

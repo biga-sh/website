@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { getCheckpoints, getSessionById } from "@spire/server";
+import { getCheckpoints, getSessionById } from "@biga/server";
 import { failure, routeHandler, success } from "@/server/http";
 import { run } from "@/server/runtime";
 

@@ -1,6 +1,6 @@
-import * as DB from "@spire/db";
-import type { BlobInput, HeadUpdate } from "@spire/db";
-import { RedisService } from "@spire/redis";
+import * as DB from "@biga/db";
+import type { BlobInput, HeadUpdate } from "@biga/db";
+import { RedisService } from "@biga/redis";
 import {
     baseName,
     insertFile,
@@ -12,10 +12,11 @@ import {
     type FileNode,
     type FileSnapshot,
     type SessionResponse,
-} from "@spire/types";
+} from "@biga/types";
 import { diffLines } from "diff";
 import { Effect } from "effect";
 
+import { envNumber } from "./env.js";
 import { nextSeq, resetSeq } from "./cache.js";
 import { fromDb } from "./db.js";
 import { DbError } from "./errors.js";
@@ -69,8 +70,8 @@ const writeCheckpointWithSeqRetry = (
         return seq;
     });
 
-const EAGER_MAX_BYTES = Number(process.env.SPIRE_EAGER_MAX_BYTES) || 1.5 * 1024 * 1024;
-const EAGER_MAX_FILES = Number(process.env.SPIRE_EAGER_MAX_FILES) || 400;
+const EAGER_MAX_BYTES = envNumber("EAGER_MAX_BYTES", 1.5 * 1024 * 1024);
+const EAGER_MAX_FILES = envNumber("EAGER_MAX_FILES", 400);
 
 export type IngestResult =
     | { ok: true }
@@ -179,7 +180,7 @@ export const buildSessionState = (
         const raw = yield* fromDb("getSession", () => DB.dbGetSession(sessionId));
         if (!raw) return null;
 
-        const SESSION_STALE_MS = Number(process.env.SPIRE_SESSION_STALE_MS) || 45_000;
+        const SESSION_STALE_MS = envNumber("SESSION_STALE_MS", 45_000);
         const stale =
             raw.status === "active" &&
             Date.now() - new Date(raw.updatedAt).getTime() > SESSION_STALE_MS;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { isValidHash } from "@spire/types";
+import { isValidHash } from "@biga/types";
 
 import { contentCache } from "./content-cache";
 import { fetchFileContent } from "./session-api";

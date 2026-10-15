@@ -20,18 +20,18 @@ importers:
 
   apps/cli:
     devDependencies:
+      '@biga/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@biga/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@biga/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@clack/prompts':
         specifier: ^1.6.0
         version: 1.6.0
-      '@spire/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@spire/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@spire/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@types/node':
         specifier: ^22.15.3
         version: 22.15.3
@@ -56,27 +56,27 @@ importers:
 
   apps/web:
     dependencies:
+      '@biga/db':
+        specifier: workspace:^
+        version: link:../../packages/db
+      '@biga/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
+      '@biga/server':
+        specifier: workspace:*
+        version: link:../../packages/server
+      '@biga/stores':
+        specifier: workspace:*
+        version: link:../../packages/stores
+      '@biga/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.54.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@shikijs/monaco':
         specifier: ^4.2.0
         version: 4.2.0
-      '@spire/db':
-        specifier: workspace:^
-        version: link:../../packages/db
-      '@spire/redis':
-        specifier: workspace:*
-        version: link:../../packages/redis
-      '@spire/server':
-        specifier: workspace:*
-        version: link:../../packages/server
-      '@spire/stores':
-        specifier: workspace:*
-        version: link:../../packages/stores
-      '@spire/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@tanstack/react-virtual':
         specifier: ^3.14.3
         version: 3.14.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -156,10 +156,10 @@ importers:
         specifier: ^3.3.1
         version: 3.6.0
     devDependencies:
-      '@spire/eslint-config':
+      '@biga/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@tailwindcss/postcss':
@@ -195,20 +195,20 @@ importers:
 
   packages/db:
     dependencies:
+      '@biga/types':
+        specifier: workspace:*
+        version: link:../types
       '@neondatabase/serverless':
         specifier: ^1.1.0
         version: 1.1.0
-      '@spire/types':
-        specifier: workspace:*
-        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@neondatabase/serverless@1.1.0)
     devDependencies:
-      '@spire/eslint-config':
+      '@biga/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -265,7 +265,7 @@ importers:
 
   packages/redis:
     dependencies:
-      '@spire/types':
+      '@biga/types':
         specifier: workspace:*
         version: link:../types
       effect:
@@ -275,7 +275,7 @@ importers:
         specifier: ^5.11.1
         version: 5.11.1
     devDependencies:
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -287,13 +287,13 @@ importers:
 
   packages/server:
     dependencies:
-      '@spire/db':
+      '@biga/db':
         specifier: workspace:*
         version: link:../db
-      '@spire/redis':
+      '@biga/redis':
         specifier: workspace:*
         version: link:../redis
-      '@spire/types':
+      '@biga/types':
         specifier: workspace:*
         version: link:../types
       diff:
@@ -303,7 +303,7 @@ importers:
         specifier: ^3.16.0
         version: 3.21.4
     devDependencies:
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/diff':
@@ -318,7 +318,7 @@ importers:
 
   packages/stores:
     dependencies:
-      '@spire/types':
+      '@biga/types':
         specifier: workspace:*
         version: link:../types
       immer:
@@ -331,10 +331,10 @@ importers:
         specifier: ^5.0.8
         version: 5.0.14(@types/react@19.2.2)(immer@10.2.0)(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
     devDependencies:
-      '@spire/eslint-config':
+      '@biga/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -353,10 +353,10 @@ importers:
         specifier: ^4.1.5
         version: 4.4.3
     devDependencies:
-      '@spire/eslint-config':
+      '@biga/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@spire/typescript-config':
+      '@biga/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':

@@ -4,7 +4,7 @@ import type {
     FileHistoryEntry,
     FileSnapshot,
     SessionResponse,
-} from "@spire/types";
+} from "@biga/types";
 
 export type LoadMode = "eager" | "lazy";
 

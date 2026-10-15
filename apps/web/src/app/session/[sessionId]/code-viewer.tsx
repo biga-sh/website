@@ -1,10 +1,10 @@
 "use client";
 
-import { baseName } from "@spire/types";
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useViewerPrefsStore } from "@spire/stores/viewer-prefs-store";
+import { baseName } from "@biga/types";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { useViewerPrefsStore } from "@biga/stores/viewer-prefs-store";
 import { useMonaco } from "@monaco-editor/react";
 import {
     ChevronDownIcon,

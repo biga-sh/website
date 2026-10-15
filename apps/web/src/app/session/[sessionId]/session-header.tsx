@@ -1,8 +1,8 @@
 "use client";
 
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useSessionStore } from "@spire/stores/session-store";
-import { useViewerPrefsStore } from "@spire/stores/viewer-prefs-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { useSessionStore } from "@biga/stores/session-store";
+import { useViewerPrefsStore } from "@biga/stores/viewer-prefs-store";
 import { LinkIcon, LocateFixedIcon, PanelLeftIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -49,7 +49,7 @@ function LiveStatus({ status }: { status: StreamStatus }) {
                 className={cn(
                     "relative size-2 shrink-0 rounded-full",
                     STATUS_DOT[status],
-                    status === "live" && "spire-live-ring text-spire"
+                    status === "live" && "biga-live-ring text-biga"
                 )}
             />
             <span className={cn("max-sm:sr-only", status === "live" && "text-foreground font-medium")}>
@@ -79,7 +79,7 @@ function FollowToggle() {
                     onClick={() => useViewerPrefsStore.getState().setFollow(!follow)}
                     className={cn(
                         follow
-                            ? "bg-spire/10 text-spire hover:bg-spire/15 hover:text-spire"
+                            ? "bg-biga/10 text-biga hover:bg-biga/15 hover:text-biga"
                             : "text-muted-foreground hover:text-foreground"
                     )}
                 >

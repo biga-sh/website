@@ -8,7 +8,7 @@ export const CreateSessionSchema = z.object({
     description: z.string().max(500).optional(),
     /**
      * Optional workspace/group id linking sessions started together from one
-     * `spire.json`. Additive and optional so older CLIs (which never send it) and
+     * `biga.json`. Additive and optional so older CLIs (which never send it) and
      * older servers (which strip it) stay compatible.
      */
     groupId: z.string().min(1).max(64).optional(),

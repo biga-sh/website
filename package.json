@@ -1,5 +1,5 @@
 {
-  "name": "spire",
+  "name": "biga",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -8,9 +8,9 @@
     "lint": "turbo run lint --ui=stream",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "db:generate": "pnpm --filter @spire/db db:generate",
-    "db:migrate": "pnpm --filter @spire/db db:migrate",
-    "db:push": "pnpm --filter @spire/db db:push"
+    "db:generate": "pnpm --filter @biga/db db:generate",
+    "db:migrate": "pnpm --filter @biga/db db:migrate",
+    "db:push": "pnpm --filter @biga/db db:push"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

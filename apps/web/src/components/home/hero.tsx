@@ -14,7 +14,7 @@ export function Hero({ siteUrl }: { siteUrl: string }) {
     <HeroMotion>
       <Section id="top" className="biga-glow relative isolate" columnClassName="pt-10 pb-12 sm:pt-14 sm:pb-16 lg:pt-20 lg:pb-24">
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:items-center lg:gap-12">
-          <div className="spire-rise flex min-w-0 flex-col items-start">
+          <div className="biga-rise flex min-w-0 flex-col items-start">
             <OnAirPill />
 
             <Typography variant="display" className="mt-6 max-w-[13ch]">
@@ -45,7 +45,7 @@ export function Hero({ siteUrl }: { siteUrl: string }) {
             </Link>
           </div>
 
-          <div className="spire-rise min-w-0 [animation-delay:120ms]">
+          <div className="biga-rise min-w-0 [animation-delay:120ms]">
             <HeroCircuit host={host} />
           </div>
         </div>

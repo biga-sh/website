@@ -1,5 +1,5 @@
-import { baseName } from "@spire/types";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
+import { baseName } from "@biga/types";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
 import { toast } from "sonner";
 
 import { fetchFileContent } from "./session-api";

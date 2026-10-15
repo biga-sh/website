@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { type RedisService, RedisServiceLive, RedisServiceNoop } from "@spire/redis";
+import { type RedisService, RedisServiceLive, RedisServiceNoop } from "@biga/redis";
 
 export const redisLayer = process.env.REDIS_URL
     ? RedisServiceLive(process.env.REDIS_URL)

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
 import { useMemo } from "react";
 
 import { ActivityBar } from "@/components/activity-bar";

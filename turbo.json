@@ -1,53 +1,126 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "REDIS_URL", "SPIRE_EAGER_MAX_BYTES", "SPIRE_EAGER_MAX_FILES", "SPIRE_SESSION_STALE_MS", "SPIRE_MAX_SNAPSHOT_BYTES", "SPIRE_MAX_CHECKPOINT_BYTES", "SPIRE_MAX_SESSION_BYTES", "SPIRE_RETENTION_DAYS", "SPIRE_DEMO_SESSION_ID", "CRON_SECRET", "NEXT_PUBLIC_SITE_URL"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "CRON_SECRET",
+    "NEXT_PUBLIC_SITE_URL",
+    "BIGA_EAGER_MAX_BYTES",
+    "BIGA_EAGER_MAX_FILES",
+    "BIGA_SESSION_STALE_MS",
+    "BIGA_MAX_SNAPSHOT_BYTES",
+    "BIGA_MAX_CHECKPOINT_BYTES",
+    "BIGA_MAX_SESSION_BYTES",
+    "BIGA_RETENTION_DAYS",
+    "BIGA_DEMO_SESSION_ID",
+    "SPIRE_EAGER_MAX_BYTES",
+    "SPIRE_EAGER_MAX_FILES",
+    "SPIRE_SESSION_STALE_MS",
+    "SPIRE_MAX_SNAPSHOT_BYTES",
+    "SPIRE_MAX_CHECKPOINT_BYTES",
+    "SPIRE_MAX_SESSION_BYTES",
+    "SPIRE_RETENTION_DAYS",
+    "SPIRE_DEMO_SESSION_ID"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
-    "@spire/types#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+    "web#build": {
+      "dependsOn": [
+        "^build",
+        "web#check-types"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
-    "@spire/stores#build": {
-      "dependsOn": ["@spire/types#build"],
-      "outputs": ["dist/**"]
+    "@biga/types#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
-    "@spire/db#build": {
-      "dependsOn": ["@spire/types#build"],
-      "outputs": ["dist/**"]
+    "@biga/stores#build": {
+      "dependsOn": [
+        "@biga/types#build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
-    "@spire/redis#build": {
-      "dependsOn": ["@spire/types#build"],
-      "outputs": ["dist/**"]
+    "@biga/db#build": {
+      "dependsOn": [
+        "@biga/types#build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
-    "@spire/server#build": {
-      "dependsOn": ["@spire/db#build", "@spire/redis#build", "@spire/types#build"],
-      "outputs": ["dist/**"]
+    "@biga/redis#build": {
+      "dependsOn": [
+        "@biga/types#build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "@biga/server#build": {
+      "dependsOn": [
+        "@biga/db#build",
+        "@biga/redis#build",
+        "@biga/types#build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "@zenshilabs/spire#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"],
-      "env": ["API_BASE_URL", "SPIRE_API_URL"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": [
+        "^check-types"
+      ]
     },
     "web#dev": {
       "cache": false,
       "persistent": true,
       "dependsOn": [
-        "@spire/types#build",
-        "@spire/stores#build",
-        "@spire/db#build",
-        "@spire/redis#build",
-        "@spire/server#build"
+        "@biga/types#build",
+        "@biga/stores#build",
+        "@biga/db#build",
+        "@biga/redis#build",
+        "@biga/server#build"
       ]
     }
   }

@@ -109,12 +109,12 @@ export function JoinForm({
                     type="submit"
                     disabled={pending}
                     className={cn(
-                        "group bg-spire-solid text-spire-foreground hover:bg-spire-solid/90 h-12 shrink-0 gap-2 rounded-full py-0 pr-1.5 pl-5 text-sm font-medium",
+                        "group bg-biga-solid text-biga-foreground hover:bg-biga-solid/90 h-12 shrink-0 gap-2 rounded-full py-0 pr-1.5 pl-5 text-sm font-medium",
                         buttonClassName
                     )}
                 >
                     {pending ? "Opening…" : "Open session"}
-                    <IconWell className="bg-spire-foreground/15">
+                    <IconWell className="bg-biga-foreground/15">
                         {pending ? (
                             <Loader2Icon className="size-4 animate-spin" strokeWidth={1.5} />
                         ) : (

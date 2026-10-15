@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChangeType, CheckpointChange, SSEEvent } from "@spire/types";
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useSessionStore } from "@spire/stores/session-store";
-import { useViewerPrefsStore } from "@spire/stores/viewer-prefs-store";
+import type { ChangeType, CheckpointChange, SSEEvent } from "@biga/types";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { useSessionStore } from "@biga/stores/session-store";
+import { useViewerPrefsStore } from "@biga/stores/viewer-prefs-store";
 
 import { contentCache } from "./content-cache";
 import { firstViewableChange, preferredFilePath } from "./reconstruct";
@@ -43,10 +43,10 @@ export const STATUS_LABELS: Record<StreamStatus, string> = {
     unavailable: "Unavailable",
 };
 
-/** Dot colour per status. Live uses Spire blue: the one accent means "now". */
+/** Dot colour per status. Live uses the viewer blue: the one accent means "now". */
 export const STATUS_DOT: Record<StreamStatus, string> = {
     connecting: "bg-warning",
-    live: "bg-spire",
+    live: "bg-biga",
     reconnecting: "bg-warning",
     offline: "bg-destructive",
     ended: "bg-muted-foreground",

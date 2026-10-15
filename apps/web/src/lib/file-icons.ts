@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { baseName } from "@spire/types";
+import { baseName } from "@biga/types";
 
 /**
  * Trimmed material-icon-theme manifest, fetched once from

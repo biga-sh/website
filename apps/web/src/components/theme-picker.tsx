@@ -1,6 +1,6 @@
 "use client";
 
-import { useThemeStore } from "@spire/stores/theme-store";
+import { useThemeStore } from "@biga/stores/theme-store";
 import { CheckIcon, PaletteIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";

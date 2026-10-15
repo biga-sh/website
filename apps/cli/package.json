@@ -42,9 +42,9 @@
   },
   "devDependencies": {
     "@clack/prompts": "^1.6.0",
-    "@spire/eslint-config": "workspace:*",
-    "@spire/types": "workspace:*",
-    "@spire/typescript-config": "workspace:*",
+    "@biga/eslint-config": "workspace:*",
+    "@biga/types": "workspace:*",
+    "@biga/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "chokidar": "^5.0.0",
     "eslint": "^9.39.1",

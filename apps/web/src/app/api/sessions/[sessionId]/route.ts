@@ -1,5 +1,5 @@
-import { CreateSessionSchema } from "@spire/types";
-import { endSession, getSessionById, upsertSession } from "@spire/server";
+import { CreateSessionSchema } from "@biga/types";
+import { endSession, getSessionById, upsertSession } from "@biga/server";
 import {
     failure,
     PAYLOAD_TOO_LARGE,

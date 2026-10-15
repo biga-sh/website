@@ -1,5 +1,5 @@
-import { FileSnapshotSchema } from "@spire/types";
-import { ingestSnapshot } from "@spire/server";
+import { FileSnapshotSchema } from "@biga/types";
+import { ingestSnapshot } from "@biga/server";
 import {
     failure,
     PAYLOAD_TOO_LARGE,

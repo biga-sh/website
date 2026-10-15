@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Checkpoint, CheckpointSummary } from "@spire/types";
+import type { Checkpoint, CheckpointSummary } from "@biga/types";
 
 interface HistoryState {
     /**

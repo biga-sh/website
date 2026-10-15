@@ -1,8 +1,8 @@
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useSessionStore } from "@spire/stores/session-store";
-import type { Checkpoint, CheckpointChange, CheckpointSummary, FileNode, SessionResponse } from "@spire/types";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { useSessionStore } from "@biga/stores/session-store";
+import type { Checkpoint, CheckpointChange, CheckpointSummary, FileNode, SessionResponse } from "@biga/types";
 
 import { decorationsFromChanges } from "@/lib/use-session-stream";
 

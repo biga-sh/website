@@ -4,8 +4,8 @@ import {
     getSessionById,
     isSessionStale,
     subscribeToSession,
-} from "@spire/server";
-import type { SSEEvent } from "@spire/types";
+} from "@biga/server";
+import type { SSEEvent } from "@biga/types";
 import { failure, routeHandler } from "@/server/http";
 import { run } from "@/server/runtime";
 

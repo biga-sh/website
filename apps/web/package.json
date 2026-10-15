@@ -13,11 +13,11 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@shikijs/monaco": "^4.2.0",
-    "@spire/db": "workspace:^",
-    "@spire/redis": "workspace:*",
-    "@spire/server": "workspace:*",
-    "@spire/stores": "workspace:*",
-    "@spire/types": "workspace:*",
+    "@biga/db": "workspace:^",
+    "@biga/redis": "workspace:*",
+    "@biga/server": "workspace:*",
+    "@biga/stores": "workspace:*",
+    "@biga/types": "workspace:*",
     "@tanstack/react-virtual": "^3.14.3",
     "@types/mdx": "^2.0.14",
     "class-variance-authority": "^0.7.1",
@@ -46,8 +46,8 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "@spire/eslint-config": "workspace:*",
-    "@spire/typescript-config": "workspace:*",
+    "@biga/eslint-config": "workspace:*",
+    "@biga/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",

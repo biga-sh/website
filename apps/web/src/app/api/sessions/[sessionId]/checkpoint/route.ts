@@ -1,5 +1,5 @@
-import { CheckpointUploadSchema } from "@spire/types";
-import { ingestCheckpoint } from "@spire/server";
+import { CheckpointUploadSchema } from "@biga/types";
+import { ingestCheckpoint } from "@biga/server";
 import {
     failure,
     PAYLOAD_TOO_LARGE,

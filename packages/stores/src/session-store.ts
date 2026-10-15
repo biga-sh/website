@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { produce } from "immer";
-import type { SessionResponse, SessionStatus } from "@spire/types";
+import type { SessionResponse, SessionStatus } from "@biga/types";
 
 export type LoadMode = "eager" | "lazy";
 

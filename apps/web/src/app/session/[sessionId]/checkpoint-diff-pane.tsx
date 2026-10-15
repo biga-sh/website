@@ -1,10 +1,10 @@
 "use client";
 
-import type { CheckpointChange } from "@spire/types";
-import { baseName } from "@spire/types";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
-import { useViewerPrefsStore } from "@spire/stores/viewer-prefs-store";
+import type { CheckpointChange } from "@biga/types";
+import { baseName } from "@biga/types";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
+import { useViewerPrefsStore } from "@biga/stores/viewer-prefs-store";
 import {
     ChevronDownIcon,
     ChevronUpIcon,

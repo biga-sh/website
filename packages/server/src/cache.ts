@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { RedisService } from "@spire/redis";
+import { RedisService } from "@biga/redis";
 
 export const cacheGet = <T>(key: string): Effect.Effect<T | null, never, RedisService> =>
     Effect.gen(function* () {
@@ -41,7 +41,7 @@ export const cacheDel = (key: string): Effect.Effect<void, never, RedisService> 
  * to recover from a counter that drifted out of sync with the persisted rows.
  */
 export const resetSeq = (sessionId: string): Effect.Effect<void, never, RedisService> =>
-    cacheDel(`spire:seq:${sessionId}`);
+    cacheDel(`biga:seq:${sessionId}`);
 
 export const nextSeq = (
     sessionId: string,
@@ -49,7 +49,7 @@ export const nextSeq = (
 ): Effect.Effect<number | null, never, RedisService> =>
     Effect.gen(function* () {
         const redis = yield* RedisService;
-        const key = `spire:seq:${sessionId}`;
+        const key = `biga:seq:${sessionId}`;
         const exists = yield* redis.exists(key).pipe(Effect.orElseSucceed(() => false));
         if (!exists) {
             const max = yield* Effect.promise(async () => {

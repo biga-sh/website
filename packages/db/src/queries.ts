@@ -7,8 +7,8 @@ import type {
     FileNode,
     FileSnapshot,
     SessionResponse,
-} from "@spire/types";
-import { HASH_RE } from "@spire/types";
+} from "@biga/types";
+import { HASH_RE } from "@biga/types";
 import { and, asc, desc, eq, inArray, lt, notInArray, sql } from "drizzle-orm";
 
 import { getDb } from "./client.js";
@@ -55,7 +55,7 @@ export async function dbGetSession(
  * Creates the session if it does not exist, or reactivates an ended one.
  * Idempotent: keeps the existing title and description unless the input
  * overrides them, and always flips status back to "active". Safe to call on
- * every `spire start` — the CLI relies on this to rejoin without history loss.
+ * every `biga start` — the CLI relies on this to rejoin without history loss.
  */
 export async function dbUpsertSession(
     sessionId: string,

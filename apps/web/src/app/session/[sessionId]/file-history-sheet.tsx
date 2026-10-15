@@ -1,7 +1,7 @@
 "use client";
 
-import type { FileHistoryEntry } from "@spire/types";
-import { baseName } from "@spire/types";
+import type { FileHistoryEntry } from "@biga/types";
+import { baseName } from "@biga/types";
 import { CheckIcon, FlagIcon, HistoryIcon, RotateCwIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 

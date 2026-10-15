@@ -2,7 +2,7 @@
 
 import { DiffEditor, Editor, useMonaco } from "@monaco-editor/react";
 import { shikiToMonaco } from "@shikijs/monaco";
-import { useThemeStore } from "@spire/stores/theme-store";
+import { useThemeStore } from "@biga/stores/theme-store";
 import type * as Monaco from "monaco-editor";
 import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";

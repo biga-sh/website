@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import { RedisService } from "@spire/redis";
-import type { SSEEvent } from "@spire/types";
+import { RedisService } from "@biga/redis";
+import type { SSEEvent } from "@biga/types";
 import { Effect } from "effect";
 
-import { EVENTS_CHANNEL } from "@spire/redis";
+import { EVENTS_CHANNEL } from "@biga/redis";
 
 /**
  * Stable identifier for this server process. Stamped on every event we publish

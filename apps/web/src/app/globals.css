@@ -14,17 +14,17 @@
   --radius: 0.625rem;
   /* Every colour in this file is OKLCH. No hex, no rgb(). */
   /*
-   * Spire blue means "now": the live broadcast, the newest checkpoint, the
+   * The viewer's blue means "now": the live broadcast, the newest checkpoint, the
    * follow toggle. It is the one accent in the viewer, so it is never spent on
    * decoration there.
    */
-  --spire-accent: oklch(0.5513 0.2473 265.85);
-  --spire-accent-foreground: oklch(1 0 0);
+  --biga-accent: oklch(0.5513 0.2473 265.85);
+  --biga-accent-foreground: oklch(1 0 0);
   /*
    * Filled controls (white label on blue). Kept at the light-mode depth in both
    * themes: the brighter dark-mode accent only reaches 3.8:1 under white text.
    */
-  --spire-solid: oklch(0.5513 0.2473 265.85);
+  --biga-solid: oklch(0.5513 0.2473 265.85);
   /* Terminal surface: always dark, regardless of theme. */
   --terminal: oklch(0.1716 0.0097 255.65);
   --terminal-foreground: oklch(0.91 0 0);
@@ -100,7 +100,7 @@
   --rail: oklch(1 0 0 / 10%);
   --hatch: color-mix(in oklab, var(--foreground) 9%, transparent);
   --stage: oklch(0.118 0.006 260);
-  --spire-accent: oklch(0.6173 0.2057 267.32);
+  --biga-accent: oklch(0.6173 0.2057 267.32);
   --background: oklch(0.155 0.005 260);
   --foreground: oklch(0.97 0.002 260);
   --card: oklch(0.195 0.006 260);
@@ -150,9 +150,9 @@
   --color-brand-mark-foreground: var(--brand-mark-foreground);
   --color-rail: var(--rail);
   --color-hatch: var(--hatch);
-  --color-spire: var(--spire-accent);
-  --color-spire-foreground: var(--spire-accent-foreground);
-  --color-spire-solid: var(--spire-solid);
+  --color-biga: var(--biga-accent);
+  --color-biga-foreground: var(--biga-accent-foreground);
+  --color-biga-solid: var(--biga-solid);
   --color-terminal-accent: var(--terminal-accent);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -239,15 +239,15 @@
 }
 
 @layer utilities {
-  .spire-rise {
-    animation: spire-rise 500ms var(--ease-out) both;
+  .biga-rise {
+    animation: biga-rise 500ms var(--ease-out) both;
   }
 
   /*
    * Translucent chrome (the floating site nav). Content scrolls underneath it;
    * where the reader asked for less transparency it turns solid.
    */
-  .spire-glass {
+  .biga-glass {
     background: color-mix(in oklab, var(--background) 72%, transparent);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     backdrop-filter: blur(20px) saturate(160%);
@@ -260,28 +260,28 @@
    * "broadcasting" without the whole dot blinking, which is easier to ignore
    * while reading code.
    */
-  .spire-live-ring {
+  .biga-live-ring {
     position: relative;
   }
-  .spire-live-ring::after {
+  .biga-live-ring::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     background: currentColor;
-    animation: spire-live-ring 2.4s var(--ease-out) infinite;
+    animation: biga-live-ring 2.4s var(--ease-out) infinite;
   }
 
   /*
    * A file row that changed in the save that just arrived. The tint fades on
    * its own, so the tree points at the change once and then gets out of the way.
    */
-  .spire-just-changed {
-    animation: spire-just-changed 1.6s var(--ease-out) both;
+  .biga-just-changed {
+    animation: biga-just-changed 1.6s var(--ease-out) both;
   }
 }
 
-@keyframes spire-live-ring {
+@keyframes biga-live-ring {
   0% {
     opacity: 0.55;
     transform: scale(1);
@@ -293,9 +293,9 @@
   }
 }
 
-@keyframes spire-just-changed {
+@keyframes biga-just-changed {
   from {
-    background-color: color-mix(in oklab, var(--spire-accent) 22%, transparent);
+    background-color: color-mix(in oklab, var(--biga-accent) 22%, transparent);
   }
   to {
     background-color: transparent;
@@ -303,14 +303,14 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .spire-glass {
+  .biga-glass {
     background: var(--background);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
 
-@keyframes spire-rise {
+@keyframes biga-rise {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -325,10 +325,10 @@
   html {
     scroll-behavior: auto;
   }
-  .spire-rise {
+  .biga-rise {
     animation: none;
   }
-  .spire-live-ring::after {
+  .biga-live-ring::after {
     animation: none;
     opacity: 0;
   }

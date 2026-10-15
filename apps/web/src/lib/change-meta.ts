@@ -1,4 +1,4 @@
-import type { ChangeType } from "@spire/types";
+import type { ChangeType } from "@biga/types";
 
 /**
  * Visual treatment for each change kind (source-control decorations). Colour

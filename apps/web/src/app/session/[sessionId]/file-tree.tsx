@@ -6,10 +6,10 @@ import {
     type Range,
     type Virtualizer,
 } from "@tanstack/react-virtual";
-import type { ChangeType, FileNode } from "@spire/types";
-import { useEditorStore } from "@spire/stores/editor-store";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
+import type { ChangeType, FileNode } from "@biga/types";
+import { useEditorStore } from "@biga/stores/editor-store";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
 import {
     ChevronRight,
     ClockIcon,
@@ -154,7 +154,7 @@ function TreeRow({
                 <span
                     key={flashKey}
                     aria-hidden
-                    className="spire-just-changed pointer-events-none absolute inset-0"
+                    className="biga-just-changed pointer-events-none absolute inset-0"
                 />
             )}
             <IndentGuides depth={depth} />

@@ -1,4 +1,4 @@
-import { buildSessionState } from "@spire/server";
+import { buildSessionState } from "@biga/server";
 import { failure, routeHandler, success } from "@/server/http";
 import { run } from "@/server/runtime";
 

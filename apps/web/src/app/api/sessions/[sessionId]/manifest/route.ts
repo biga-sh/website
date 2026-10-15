@@ -1,4 +1,4 @@
-import { getSessionManifest } from "@spire/server";
+import { getSessionManifest } from "@biga/server";
 import { failure, routeHandler, success } from "@/server/http";
 import { run } from "@/server/runtime";
 

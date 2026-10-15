@@ -25,7 +25,7 @@ export interface RedisServiceShape {
     readonly ensureSubscriber: (onMessage: (channel: string, message: string) => void) => void;
 }
 
-export class RedisService extends Context.Tag("@spire/redis/RedisService")<
+export class RedisService extends Context.Tag("@biga/redis/RedisService")<
     RedisService,
     RedisServiceShape
 >() {}

@@ -10,7 +10,7 @@ import {
     type CheckpointChange,
     type FileNode,
     type FlatNode,
-} from "@spire/types";
+} from "@biga/types";
 
 /** Current content hash and binary flag for a given file path. */
 export type HeadMeta = { hash: string; binary: boolean };

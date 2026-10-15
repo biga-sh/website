@@ -1,5 +1,5 @@
 {
-  "name": "@spire/redis",
+  "name": "@biga/redis",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,12 +17,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@spire/types": "workspace:*",
+    "@biga/types": "workspace:*",
     "effect": "^3.16.0",
     "ioredis": "^5.11.1"
   },
   "devDependencies": {
-    "@spire/typescript-config": "workspace:*",
+    "@biga/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "typescript": "5.9.2"
   }

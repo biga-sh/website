@@ -1,6 +1,6 @@
-import * as DB from "@spire/db";
-import { RedisService } from "@spire/redis";
-import { HASH_RE } from "@spire/types";
+import * as DB from "@biga/db";
+import { RedisService } from "@biga/redis";
+import { HASH_RE } from "@biga/types";
 import { Effect } from "effect";
 
 import { cacheGet, cacheSet } from "./cache.js";

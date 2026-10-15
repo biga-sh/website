@@ -59,7 +59,7 @@ export function ActivityBar({
                                 {badge && (
                                     <span
                                         aria-hidden
-                                        className="bg-spire ring-sidebar absolute top-1.5 right-1.5 size-2 rounded-full ring-2 motion-safe:animate-in motion-safe:zoom-in-50"
+                                        className="bg-biga ring-sidebar absolute top-1.5 right-1.5 size-2 rounded-full ring-2 motion-safe:animate-in motion-safe:zoom-in-50"
                                     />
                                 )}
                             </button>

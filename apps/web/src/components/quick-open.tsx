@@ -1,7 +1,7 @@
 "use client";
 
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { baseName } from "@spire/types";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { baseName } from "@biga/types";
 import { useEffect, useMemo, useRef } from "react";
 
 import { FileTypeIcon } from "@/components/file-icon";

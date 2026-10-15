@@ -1,3 +1,5 @@
+import { envNumber } from "@/server/env";
+
 /**
  * Request body size caps per write endpoint, in bytes. The CLI caps individual
  * files at 2MB (MAX_FILE_BYTES), so these ceilings are generous for legitimate
@@ -5,9 +7,9 @@
  * self-hosters with unusual needs.
  */
 export const PAYLOAD_LIMITS = {
-    snapshot: Number(process.env.SPIRE_MAX_SNAPSHOT_BYTES) || 32 * 1024 * 1024,
-    checkpoint: Number(process.env.SPIRE_MAX_CHECKPOINT_BYTES) || 8 * 1024 * 1024,
-    session: Number(process.env.SPIRE_MAX_SESSION_BYTES) || 16 * 1024,
+    snapshot: envNumber("MAX_SNAPSHOT_BYTES", 32 * 1024 * 1024),
+    checkpoint: envNumber("MAX_CHECKPOINT_BYTES", 8 * 1024 * 1024),
+    session: envNumber("MAX_SESSION_BYTES", 16 * 1024),
 } as const;
 
 export type RateLimitConfig = { limit: number; windowSec: number };

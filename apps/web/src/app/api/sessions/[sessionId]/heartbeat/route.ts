@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { touchSession } from "@spire/server";
+import { touchSession } from "@biga/server";
 import { failure, routeHandler } from "@/server/http";
 import { RATE_LIMITS } from "@/server/limits";
 import { rateLimit } from "@/server/rate-limit";

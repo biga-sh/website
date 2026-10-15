@@ -1,5 +1,5 @@
 {
-  "name": "@spire/stores",
+  "name": "@biga/stores",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -26,13 +26,13 @@
     "react": "^19.2.0"
   },
   "dependencies": {
-    "@spire/types": "workspace:*",
+    "@biga/types": "workspace:*",
     "immer": "^10.1.3",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@spire/eslint-config": "workspace:*",
-    "@spire/typescript-config": "workspace:*",
+    "@biga/eslint-config": "workspace:*",
+    "@biga/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"

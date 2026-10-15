@@ -25,7 +25,7 @@ export function SiteHeader() {
       >
         Skip to content
       </a>
-      <header className="spire-glass border-rail sticky top-0 z-40 border-b">
+      <header className="biga-glass border-rail sticky top-0 z-40 border-b">
         <Frame columnClassName={cn(INSET, "flex h-14 items-center gap-2")}>
           <Link
             href="/"

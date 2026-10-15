@@ -1,8 +1,8 @@
 "use client";
 
-import { baseName, type CheckpointChange, type CheckpointSummary } from "@spire/types";
-import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { useHistoryStore } from "@spire/stores/history-store";
+import { baseName, type CheckpointChange, type CheckpointSummary } from "@biga/types";
+import { useFileTreeStore } from "@biga/stores/file-tree-store";
+import { useHistoryStore } from "@biga/stores/history-store";
 import { ArrowUpIcon, HistoryIcon, Loader2Icon, RotateCwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -88,7 +88,7 @@ function RailMarker({ first, last, latest }: { first: boolean; last: boolean; la
                 className={cn(
                     "relative mt-[13px] size-[7px] rounded-full",
                     latest
-                        ? "bg-spire shadow-[0_0_0_3px_color-mix(in_oklab,var(--spire-accent)_22%,transparent)]"
+                        ? "bg-biga shadow-[0_0_0_3px_color-mix(in_oklab,var(--biga-accent)_22%,transparent)]"
                         : "bg-muted-foreground/45"
                 )}
             />
@@ -289,7 +289,7 @@ export function HistoryPanel({
                 <button
                     type="button"
                     onClick={jumpToLatest}
-                    className="bg-spire/10 text-spire hover:bg-spire/15 focus-visible:ring-spire/50 motion-safe:animate-in motion-safe:fade-in mx-2 mb-1 flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors outline-none focus-visible:ring-2"
+                    className="bg-biga/10 text-biga hover:bg-biga/15 focus-visible:ring-biga/50 motion-safe:animate-in motion-safe:fade-in mx-2 mb-1 flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors outline-none focus-visible:ring-2"
                 >
                     <ArrowUpIcon className="size-3.5" />
                     {pluralize(newWhileBrowsing, "new checkpoint")}. Jump to latest

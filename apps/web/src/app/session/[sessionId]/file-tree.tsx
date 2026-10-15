@@ -1,13 +1,29 @@
 "use client";
 
-import { useVirtualizer } from "@tanstack/react-virtual";
-import type { FileNode } from "@spire/types";
+import {
+    defaultRangeExtractor,
+    useVirtualizer,
+    type Range,
+    type Virtualizer,
+} from "@tanstack/react-virtual";
+import type { ChangeType, FileNode } from "@spire/types";
 import { useEditorStore } from "@spire/stores/editor-store";
 import { useFileTreeStore } from "@spire/stores/file-tree-store";
-import { ChevronRight, ClockIcon, CopyIcon, DownloadIcon } from "lucide-react";
-import { memo, useCallback, useRef } from "react";
+import { useHistoryStore } from "@spire/stores/history-store";
+import {
+    ChevronRight,
+    ClockIcon,
+    CopyIcon,
+    DownloadIcon,
+    FileTextIcon,
+    FolderClosedIcon,
+    ListCollapseIcon,
+    SearchIcon,
+} from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { FileTypeIcon } from "@/components/file-icon";
+import { useModKey } from "@/components/ui/kbd";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -15,294 +31,470 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EmptyState } from "@/components/viewer/empty-state";
+import { IconAction } from "@/components/viewer/icon-action";
+import { PanelHeader } from "@/components/viewer/panel-header";
 import { CHANGE_META } from "@/lib/change-meta";
-import { copyText, downloadText } from "@/lib/file-actions";
-import { fetchFileContent } from "@/lib/session-api";
+import { copyFileContent, copyWithToast, downloadFile } from "@/lib/file-actions";
 import { prefetchFileContent } from "@/lib/use-file-content";
+import { useRovingTree, type TreeItemMeta } from "@/lib/use-roving-tree";
 import { cn } from "@/lib/utils";
 
-const ROW_HEIGHT = 24;
+const INDENT = 12;
+const BASE_PAD = 8;
 
-/** Resolve a file's current content (cache-first) for an action. */
-async function withContent(
-    sessionId: string,
-    path: string,
-    action: (content: string) => void
-) {
-    const meta = useFileTreeStore.getState().headMeta.get(path);
-    const ref = meta?.hash ?? "latest";
-    try {
-        const result = await fetchFileContent(sessionId, path, ref);
-        action(result.content);
-    } catch {
-        /**
-         * Fetch failures are silently discarded. The file may have been deleted
-         * between the hover event and the fetch resolving, which is a normal
-         * race condition in a live session.
-         */
+/** Faint vertical guides, one per ancestor level, so deep trees stay legible. */
+function IndentGuides({ depth }: { depth: number }) {
+    if (depth === 0) {
+        return null;
     }
+    return (
+        <>
+            {Array.from({ length: depth }).map((_, level) => (
+                <span
+                    key={level}
+                    aria-hidden
+                    className="bg-sidebar-border pointer-events-none absolute inset-y-0 w-px"
+                    style={{ left: `${BASE_PAD + level * INDENT + 7}px` }}
+                />
+            ))}
+        </>
+    );
 }
 
-const DirectoryRow = memo(
-function DirectoryRow({
-    node,
-    depth,
-    expanded,
-    onToggle,
-}: {
+type RowProps = {
     node: FileNode;
     depth: number;
     expanded: boolean;
-    onToggle: (path: string) => void;
-}) {
-    const indent = { paddingLeft: `${depth * 12 + 6}px` };
+    selected: boolean;
+    decoration: ChangeType | undefined;
+    /** Changes whenever a live save touches this row, restarting its highlight. */
+    flashKey: number | null;
+    itemProps: ReturnType<ReturnType<typeof useRovingTree>["getItemProps"]>;
+    setSize: number;
+    posInSet: number;
+    onClick: () => void;
+};
 
-    if (node.type === "directory" && node.ignored) {
+const ROW_CLASS =
+    "group/row relative flex h-full cursor-default items-center gap-1.5 pr-2 text-[13px] outline-none select-none " +
+    "hover:bg-sidebar-accent/60 focus-visible:ring-ring/70 focus-visible:ring-2 focus-visible:ring-inset " +
+    "aria-selected:bg-sidebar-accent aria-selected:text-sidebar-accent-foreground";
+
+function TreeRow({
+    node,
+    depth,
+    expanded,
+    selected,
+    decoration,
+    flashKey,
+    itemProps,
+    setSize,
+    posInSet,
+    onClick,
+}: RowProps) {
+    const indent = { paddingLeft: `${BASE_PAD + depth * INDENT}px` };
+    const common = {
+        role: "treeitem",
+        "aria-level": depth + 1,
+        "aria-setsize": setSize,
+        "aria-posinset": posInSet,
+        ...itemProps,
+    } as const;
+
+    if (node.type === "directory") {
+        if (node.ignored) {
+            return (
+                <div
+                    {...common}
+                    aria-disabled
+                    className={cn(ROW_CLASS, "text-muted-foreground hover:bg-transparent")}
+                    style={indent}
+                >
+                    <IndentGuides depth={depth} />
+                    <span className="size-3.5 shrink-0" />
+                    <FileTypeIcon kind="directory" name={node.name} className="size-4 opacity-50" />
+                    <span className="truncate">{node.name}</span>
+                    <span className="text-muted-foreground/80 ml-auto shrink-0 pl-2 text-[11px]">
+                        not shared
+                    </span>
+                </div>
+            );
+        }
+
         return (
             <div
-                className="text-muted-foreground/60 flex h-full items-center gap-1.5 pr-2 text-sm italic"
+                {...common}
+                aria-expanded={expanded}
+                aria-selected={false}
+                className={ROW_CLASS}
                 style={indent}
-                title="Contents hidden (build output)"
+                onClick={onClick}
             >
-                <span className="size-3.5 shrink-0" />
-                <FileTypeIcon kind="directory" name={node.name} className="size-4 opacity-60" />
+                <IndentGuides depth={depth} />
+                <ChevronRight
+                    aria-hidden
+                    className={cn(
+                        "text-muted-foreground size-3.5 shrink-0 transition-transform duration-150 ease-out",
+                        expanded && "rotate-90"
+                    )}
+                />
+                <FileTypeIcon kind="directory" name={node.name} expanded={expanded} className="size-4" />
                 <span className="truncate">{node.name}</span>
             </div>
         );
     }
 
+    const meta = decoration ? CHANGE_META[decoration] : null;
+
     return (
-        <Button
-            variant="ghost"
-            aria-expanded={expanded}
-            onClick={() => onToggle(node.path)}
-            className="hover:bg-sidebar-accent h-full w-full justify-start gap-1.5 rounded-none pr-2 text-sm"
-            style={indent}
-        >
-            <ChevronRight
-                className={cn(
-                    "text-muted-foreground size-3.5 shrink-0 transition-transform",
-                    expanded && "rotate-90"
-                )}
-            />
-            <FileTypeIcon
-                kind="directory"
-                name={node.name}
-                expanded={expanded}
-                className="size-4"
-            />
-            <span className="truncate">{node.name}</span>
-        </Button>
+        <div {...common} aria-selected={selected} className={ROW_CLASS} style={indent} onClick={onClick}>
+            {flashKey !== null && (
+                <span
+                    key={flashKey}
+                    aria-hidden
+                    className="spire-just-changed pointer-events-none absolute inset-0"
+                />
+            )}
+            <IndentGuides depth={depth} />
+            <span className="size-3.5 shrink-0" />
+            <FileTypeIcon kind="file" name={node.name} className="size-4" />
+            <span className={cn("truncate", meta && decoration !== "modified" && meta.className)}>
+                {node.name}
+            </span>
+            {meta && (
+                <span
+                    className={cn("ml-auto w-3 shrink-0 text-center font-mono text-[11px] font-semibold", meta.className)}
+                    title={meta.label}
+                >
+                    {meta.letter}
+                    <span className="sr-only">, {meta.label.toLowerCase()}</span>
+                </span>
+            )}
+        </div>
     );
-},
-(prev, next) =>
-    prev.node.path === next.node.path &&
-    prev.node.name === next.node.name &&
-    prev.depth === next.depth &&
-    prev.expanded === next.expanded &&
-    prev.onToggle === next.onToggle
-);
+}
 
-const FileRow = memo(function FileRow({
-    node,
-    depth,
+/**
+ * Right-click (or long-press) actions for a file row. The trigger is the row's
+ * positioning wrapper; the menu key on a focused row bubbles up to it.
+ */
+function FileContextMenu({
     sessionId,
-    active,
-    onOpenTimeline,
+    path,
+    onRevealInTimeline,
+    children,
 }: {
-    node: Extract<FileNode, { type: "file" }>;
-    depth: number;
     sessionId: string;
-    active: boolean;
-    onOpenTimeline: (path: string) => void;
+    path: string;
+    onRevealInTimeline: (path: string) => void;
+    children: React.ReactElement;
 }) {
-    const openFile = useEditorStore((state) => state.openFile);
-    const setSelectedPath = useFileTreeStore((state) => state.setSelectedPath);
-    const decoration = useFileTreeStore((state) => state.decorations.get(node.path));
-    const indent = { paddingLeft: `${depth * 12 + 6}px` };
-    const meta = CHANGE_META[decoration ?? "modified"];
-
-    const open = useCallback(() => {
-        openFile(node.path);
-        setSelectedPath(node.path);
-    }, [openFile, setSelectedPath, node.path]);
-
     return (
         <ContextMenu>
-            <ContextMenuTrigger asChild>
-                <div
-                    className={cn(
-                        "group flex h-full items-center gap-1.5 pr-1 text-sm",
-                        active
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "hover:bg-sidebar-accent/60"
-                    )}
-                    style={indent}
-                    onMouseEnter={() => {
-                        if (node.hash) {
-                            prefetchFileContent(sessionId, node.path, node.hash);
-                        }
-                    }}
-                >
-                    <span className="size-3.5 shrink-0" />
-                    <Button
-                        variant="ghost"
-                        onClick={open}
-                        className="min-w-0 flex-1 justify-start gap-1.5 h-full rounded-none px-0 text-sm hover:bg-transparent"
-                    >
-                        <FileTypeIcon kind="file" name={node.name} className="size-4" />
-                        <span
-                            className={cn(
-                                "truncate",
-                                decoration && decoration !== "modified" && meta.className
-                            )}
-                        >
-                            {node.name}
-                        </span>
-                    </Button>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Download file"
-                            className="size-5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-                            onClick={() =>
-                                withContent(sessionId, node.path, (content) =>
-                                    downloadText(node.path, content)
-                                )
-                            }
-                        >
-                            <DownloadIcon className="size-3.5" />
-                        </Button>
-                        {decoration && (
-                            <span
-                                className={cn(
-                                    "w-3 text-center font-mono text-[11px] font-semibold",
-                                    meta.className
-                                )}
-                                title={meta.label}
-                            >
-                                {meta.letter}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </ContextMenuTrigger>
+            <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-52">
-                <ContextMenuItem onClick={() => void copyText(node.path)}>
-                    <CopyIcon className="size-3.5" />
+                <ContextMenuItem onSelect={() => void copyWithToast(path, "path")}>
+                    <CopyIcon />
                     Copy path
                 </ContextMenuItem>
-                <ContextMenuItem
-                    onClick={() =>
-                        withContent(sessionId, node.path, (content) => void copyText(content))
-                    }
-                >
-                    <CopyIcon className="size-3.5" />
-                    Copy content
+                <ContextMenuItem onSelect={() => void copyFileContent(sessionId, path)}>
+                    <FileTextIcon />
+                    Copy contents
                 </ContextMenuItem>
-                <ContextMenuItem
-                    onClick={() =>
-                        withContent(sessionId, node.path, (content) =>
-                            downloadText(node.path, content)
-                        )
-                    }
-                >
-                    <DownloadIcon className="size-3.5" />
+                <ContextMenuItem onSelect={() => void downloadFile(sessionId, path)}>
+                    <DownloadIcon />
                     Download
                 </ContextMenuItem>
                 <ContextMenuSeparator />
-                <ContextMenuItem onClick={() => onOpenTimeline(node.path)}>
-                    <ClockIcon className="size-3.5" />
-                    Reveal in Timeline
+                <ContextMenuItem onSelect={() => onRevealInTimeline(path)}>
+                    <ClockIcon />
+                    Show in timeline
                 </ContextMenuItem>
             </ContextMenuContent>
         </ContextMenu>
     );
-},
-(prev, next) =>
-    prev.node.path === next.node.path &&
-    prev.node.hash === next.node.hash &&
-    prev.depth === next.depth &&
-    prev.active === next.active &&
-    prev.sessionId === next.sessionId &&
-    prev.onOpenTimeline === next.onOpenTimeline
-);
+}
+
+/**
+ * The paths touched by the newest checkpoint, but only once it arrived live
+ * after this tree mounted. Saves that predate the viewer never flash.
+ */
+function useLiveFlash(): { seq: number | null; paths: ReadonlySet<string> } {
+    const latestSeq = useHistoryStore((state) => state.checkpoints[0]?.seq ?? null);
+    const latest = useHistoryStore((state) =>
+        latestSeq !== null ? state.bySeq.get(latestSeq) : undefined
+    );
+    const [baseline] = useState(() => latestSeq);
+    return useMemo(() => {
+        if (latestSeq === null || !latest || (baseline !== null && latestSeq <= baseline)) {
+            return { seq: null, paths: new Set<string>() };
+        }
+        return { seq: latestSeq, paths: new Set(latest.changes.map((change) => change.path)) };
+    }, [latestSeq, latest, baseline]);
+}
 
 export function FileTree({
     sessionId,
+    ended,
+    comfortable = false,
     onOpenTimeline,
+    onOpenQuickOpen,
+    onFileOpened,
 }: {
     sessionId: string;
+    ended: boolean;
+    /** Taller rows for touch, used in the mobile drawer. */
+    comfortable?: boolean;
     onOpenTimeline: (path: string) => void;
+    onOpenQuickOpen: () => void;
+    /** Called after the reader opens a file from the tree (not when follow mode does). */
+    onFileOpened?: () => void;
 }) {
     const flattened = useFileTreeStore((state) => state.flattened);
     const selectedPath = useFileTreeStore((state) => state.selectedPath);
     const expandedPaths = useFileTreeStore((state) => state.expandedPaths);
-    const toggleExpanded = useFileTreeStore((state) => state.toggleExpanded);
+    const decorations = useFileTreeStore((state) => state.decorations);
+    const fileCount = useFileTreeStore((state) => state.headMeta.size);
+    const hasRoot = useFileTreeStore((state) => state.root !== null);
+    const mod = useModKey();
+    const flash = useLiveFlash();
 
+    const rowHeight = comfortable ? 36 : 26;
     const parentRef = useRef<HTMLDivElement>(null);
+
+    const openFile = useCallback(
+        (path: string) => {
+            useEditorStore.getState().openFile(path);
+            useFileTreeStore.getState().setSelectedPath(path);
+            onFileOpened?.();
+        },
+        [onFileOpened]
+    );
+
+    const items = useMemo<TreeItemMeta[]>(
+        () =>
+            flattened.map(({ node, depth }) => ({
+                key: node.path,
+                level: depth + 1,
+                label: node.name,
+                expandable: node.type === "directory" && !node.ignored,
+                expanded: node.type === "directory" && expandedPaths.has(node.path),
+            })),
+        [flattened, expandedPaths]
+    );
+
+    // aria-setsize / aria-posinset: position among siblings, computed in one pass.
+    const positions = useMemo(() => {
+        const result: { setSize: number; posInSet: number }[] = new Array(flattened.length);
+        const groups = new Map<string, number[]>();
+        const parents: number[] = [];
+        flattened.forEach(({ depth }, index) => {
+            parents.length = depth;
+            const groupKey = `${depth}:${parents[depth - 1] ?? -1}`;
+            const group = groups.get(groupKey) ?? [];
+            group.push(index);
+            groups.set(groupKey, group);
+            parents[depth] = index;
+        });
+        for (const group of groups.values()) {
+            group.forEach((index, position) => {
+                result[index] = { setSize: group.length, posInSet: position + 1 };
+            });
+        }
+        return result;
+    }, [flattened]);
+
+    // The roving tree needs to scroll the virtualizer, and the virtualizer needs
+    // the roving tree's active row; a ref breaks the cycle.
+    const virtualizerRef = useRef<Virtualizer<HTMLDivElement, Element> | null>(null);
+    const scrollToIndex = useCallback((index: number) => {
+        virtualizerRef.current?.scrollToIndex(index, { align: "auto" });
+    }, []);
+
+    const onToggle = useCallback(
+        (index: number, expand: boolean) => {
+            const item = flattened[index];
+            if (item) {
+                useFileTreeStore.getState().setExpanded(item.node.path, expand);
+            }
+        },
+        [flattened]
+    );
+
+    const onActivate = useCallback(
+        (index: number) => {
+            const item = flattened[index];
+            if (!item) {
+                return;
+            }
+            if (item.node.type === "directory") {
+                if (!item.node.ignored) {
+                    useFileTreeStore.getState().toggleExpanded(item.node.path);
+                }
+            } else {
+                openFile(item.node.path);
+            }
+        },
+        [flattened, openFile]
+    );
+
+    const { activeIndex, getItemProps } = useRovingTree({
+        items,
+        containerRef: parentRef,
+        selectedKey: selectedPath,
+        onToggle,
+        onActivate,
+        scrollToIndex,
+    });
+
+    // Keep the focusable row mounted even when scrolled out of view, so Tab
+    // always has somewhere to land.
+    const rangeExtractor = useCallback(
+        (range: Range) => {
+            const indexes = defaultRangeExtractor(range);
+            if (activeIndex >= 0 && !indexes.includes(activeIndex)) {
+                indexes.push(activeIndex);
+                indexes.sort((a, b) => a - b);
+            }
+            return indexes;
+        },
+        [activeIndex]
+    );
+
     const virtualizer = useVirtualizer({
         count: flattened.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => ROW_HEIGHT,
+        estimateSize: () => rowHeight,
         overscan: 16,
+        rangeExtractor,
     });
+    useLayoutEffect(() => {
+        virtualizerRef.current = virtualizer;
+    });
+
+    useEffect(() => {
+        virtualizer.measure();
+    }, [rowHeight, virtualizer]);
+
+    // Reveal the selected file when it changes from outside the tree (follow
+    // mode, Go to file, a tab click).
+    const lastRevealed = useRef<string | null>(null);
+    useEffect(() => {
+        if (!selectedPath || selectedPath === lastRevealed.current) {
+            return;
+        }
+        const index = flattened.findIndex((item) => item.node.path === selectedPath);
+        if (index >= 0) {
+            lastRevealed.current = selectedPath;
+            virtualizer.scrollToIndex(index, { align: "auto" });
+        }
+    }, [selectedPath, flattened, virtualizer]);
+
+    const header = (
+        <PanelHeader
+            title="Files"
+            id="files-heading"
+            meta={fileCount > 0 ? fileCount.toLocaleString() : undefined}
+            actions={
+                <>
+                    <IconAction label="Go to file" shortcut={[mod, "P"]} onClick={onOpenQuickOpen}>
+                        <SearchIcon />
+                    </IconAction>
+                    <IconAction
+                        label="Collapse all folders"
+                        disabled={expandedPaths.size === 0}
+                        onClick={() => useFileTreeStore.getState().collapseAll()}
+                    >
+                        <ListCollapseIcon />
+                    </IconAction>
+                </>
+            }
+        />
+    );
+
+    if (flattened.length === 0) {
+        return (
+            <div className="flex h-full flex-col">
+                {header}
+                <EmptyState
+                    icon={FolderClosedIcon}
+                    title={ended || hasRoot ? "No files shared" : "Waiting for files"}
+                    description={
+                        ended || hasRoot
+                            ? "This session didn't include any files."
+                            : "Files appear here as soon as the broadcaster's first snapshot uploads."
+                    }
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-full flex-col">
-            <div className="text-muted-foreground flex h-8 shrink-0 items-center px-3 text-[11px] font-medium tracking-wide uppercase">
-                Explorer
-            </div>
-            {flattened.length === 0 ? (
-                <div className="text-muted-foreground flex flex-1 items-center justify-center p-4 text-center text-xs">
-                    Waiting for files…
+            {header}
+            <ScrollArea className="min-h-0 flex-1" viewportRef={parentRef}>
+                <div
+                    role="tree"
+                    aria-labelledby="files-heading"
+                    className="relative w-full pb-2"
+                    style={{ height: `${virtualizer.getTotalSize()}px` }}
+                >
+                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                        const item = flattened[virtualRow.index];
+                        if (!item) {
+                            return null;
+                        }
+                        const { node, depth } = item;
+                        const position = positions[virtualRow.index] ?? { setSize: 1, posInSet: 1 };
+                        const isFile = node.type === "file";
+                        const row = (
+                            <TreeRow
+                                node={node}
+                                depth={depth}
+                                expanded={expandedPaths.has(node.path)}
+                                selected={isFile && selectedPath === node.path}
+                                decoration={isFile ? decorations.get(node.path) : undefined}
+                                flashKey={isFile && flash.paths.has(node.path) ? flash.seq : null}
+                                itemProps={getItemProps(virtualRow.index)}
+                                setSize={position.setSize}
+                                posInSet={position.posInSet}
+                                onClick={() => onActivate(virtualRow.index)}
+                            />
+                        );
+                        const wrapper = (
+                            <div
+                                key={node.path}
+                                className="absolute top-0 left-0 w-full"
+                                style={{
+                                    height: `${virtualRow.size}px`,
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                }}
+                                onMouseEnter={
+                                    node.type === "file" && node.hash
+                                        ? () => prefetchFileContent(sessionId, node.path, node.hash)
+                                        : undefined
+                                }
+                            >
+                                {row}
+                            </div>
+                        );
+                        return isFile ? (
+                            <FileContextMenu
+                                key={node.path}
+                                sessionId={sessionId}
+                                path={node.path}
+                                onRevealInTimeline={onOpenTimeline}
+                            >
+                                {wrapper}
+                            </FileContextMenu>
+                        ) : (
+                            wrapper
+                        );
+                    })}
                 </div>
-            ) : (
-                <ScrollArea className="min-h-0 flex-1" viewportRef={parentRef}>
-                    <div
-                        className="relative w-full"
-                        style={{ height: `${virtualizer.getTotalSize()}px` }}
-                    >
-                        {virtualizer.getVirtualItems().map((virtualRow) => {
-                            const item = flattened[virtualRow.index];
-                            if (!item) {
-                                return null;
-                            }
-                            const { node, depth } = item;
-                            return (
-                                <div
-                                    key={node.path}
-                                    className="absolute top-0 left-0 w-full"
-                                    style={{
-                                        height: `${virtualRow.size}px`,
-                                        transform: `translateY(${virtualRow.start}px)`,
-                                    }}
-                                >
-                                    {node.type === "directory" ? (
-                                        <DirectoryRow
-                                            node={node}
-                                            depth={depth}
-                                            expanded={expandedPaths.has(node.path)}
-                                            onToggle={toggleExpanded}
-                                        />
-                                    ) : (
-                                        <FileRow
-                                            node={node}
-                                            depth={depth}
-                                            sessionId={sessionId}
-                                            active={selectedPath === node.path}
-                                            onOpenTimeline={onOpenTimeline}
-                                        />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
-            )}
+            </ScrollArea>
         </div>
     );
 }

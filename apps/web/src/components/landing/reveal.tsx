@@ -8,10 +8,13 @@ type RevealProps = {
   delay?: number;
   className?: string;
   children: ReactNode;
+  /** Element to render. Sections use this to be the revealed node directly,
+      instead of nesting an extra wrapping div inside full-width layouts. */
+  as?: "div" | "section";
 };
 
-export function Reveal({ delay = 0, className, children }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
+export function Reveal({ delay = 0, className, children, as = "div" }: RevealProps) {
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const element = ref.current;
@@ -41,12 +44,19 @@ export function Reveal({ delay = 0, className, children }: RevealProps) {
     return () => observer.disconnect();
   }, []);
 
+  const style = { "--reveal-delay": `${delay}ms` } as CSSProperties;
+  const cls = cn("spire-reveal", className);
+
+  if (as === "section") {
+    return (
+      <section ref={ref as never} className={cls} style={style}>
+        {children}
+      </section>
+    );
+  }
+
   return (
-    <div
-      ref={ref}
-      className={cn("spire-reveal", className)}
-      style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
-    >
+    <div ref={ref as never} className={cls} style={style}>
       {children}
     </div>
   );

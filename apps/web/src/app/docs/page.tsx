@@ -3,8 +3,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CopyCommand } from "@/components/landing/copy-command";
+import { DocsToc, type TocItem } from "@/components/landing/docs-toc";
 import { Code } from "@/components/landing/primitives";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
+import { installCommand } from "@/lib/landing-demo";
 
 export const metadata: Metadata = {
   title: "Documentation",
@@ -12,10 +14,12 @@ export const metadata: Metadata = {
     "Get started with Spire: broadcast a directory, share the link, and let others watch your code live. CLI reference and self-hosting guide.",
 };
 
-const NAV = [
-  { href: "#getting-started", label: "Getting started" },
-  { href: "#cli-reference", label: "CLI reference" },
-  { href: "#self-hosting", label: "Self-hosting" },
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+const NAV: TocItem[] = [
+  { id: "getting-started", label: "Getting started" },
+  { id: "cli-reference", label: "CLI reference" },
+  { id: "self-hosting", label: "Self-hosting" },
 ];
 
 function Section({
@@ -28,8 +32,19 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-28">
-      <h2 className="mb-4 text-2xl font-semibold tracking-tight">{title}</h2>
+    <section id={id} aria-labelledby={`${id}-heading`}>
+      <h2
+        id={`${id}-heading`}
+        className="group mb-4 flex items-baseline gap-2 text-2xl font-semibold tracking-tight"
+      >
+        {title}
+        <a
+          href={`#${id}`}
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded text-base font-normal opacity-0 transition-opacity outline-none group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 pointer-coarse:hidden"
+        >
+          #<span className="sr-only">Link to {title}</span>
+        </a>
+      </h2>
       <div className="text-muted-foreground space-y-4 text-sm leading-relaxed">
         {children}
       </div>
@@ -54,40 +69,39 @@ export default function DocsPage() {
     <div className="relative">
       <SiteHeader />
 
-      <div className="mx-auto grid max-w-5xl gap-12 px-6 pt-16 pb-24 md:grid-cols-[180px_1fr]">
-        <nav className="hidden md:block">
-          <ul className="sticky top-28 space-y-2 text-sm">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <a
-                  href={item.href}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 px-4 pt-12 pb-24 sm:px-6 md:grid-cols-[180px_minmax(0,1fr)] md:pt-16">
+        <aside className="hidden md:block">
+          <div className="sticky top-28">
+            <DocsToc items={NAV} variant="rail" />
+          </div>
+        </aside>
 
-        <main className="space-y-14">
-          <div>
-            <h1 className="text-[clamp(2rem,4vw,2.75rem)] leading-[1.1] font-semibold tracking-[-0.03em]">
-              Documentation
-            </h1>
-            <p className="text-muted-foreground mt-4 max-w-[58ch] leading-relaxed">
-              Spire broadcasts a local directory so anyone with the link can
-              watch your files change live. No accounts, and nothing for viewers
-              to install.
-            </p>
+        <main id="content" className="min-w-0 space-y-14">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-[clamp(2rem,4vw,2.75rem)] leading-[1.1] font-semibold tracking-[-0.03em]">
+                Documentation
+              </h1>
+              <p className="text-muted-foreground mt-4 max-w-[58ch] leading-relaxed text-pretty">
+                Spire broadcasts a local directory so anyone with the link can
+                watch your files change live. No accounts, and nothing for viewers
+                to install.
+              </p>
+            </div>
+            <div className="md:hidden">
+              <DocsToc items={NAV} variant="chips" />
+            </div>
           </div>
 
           <Section id="getting-started" title="Getting started">
             <p>
               From the directory you want to share, run one command. The CLI
               downloads on first use, so there is nothing to install globally.
+              The CLI talks to <Code>http://localhost:3000</Code> by default,
+              so point <Code>SPIRE_API_URL</Code> at this site to get a link
+              anyone can open:
             </p>
-            <Command>npx @zenshilabs/spire start</Command>
+            <Command>{installCommand("bash", siteUrl)}</Command>
             <p>
               Spire prints a share URL. Send it to anyone; they open it in a
               browser and watch your files update as you save. The session is
@@ -172,9 +186,8 @@ export default function DocsPage() {
             </h3>
             <p>
               Spire reads the <Code>.gitignore</Code> at the root of the
-              directory, and always ignores <Code>node_modules</Code>,{" "}
-              <Code>.git</Code>, and every <Code>.env</Code> file regardless of
-              what it says. Build output directories appear in the tree but their
+              directory, and by default ignores <Code>node_modules</Code>,{" "}
+              <Code>.git</Code>, and every <Code>.env</Code> file. Build output directories appear in the tree but their
               contents are never watched or uploaded. Binary files are listed with
               their size and hash, but their bytes stay on your machine, and no
               file over 2 MB is read.

@@ -31,17 +31,58 @@ type ApiEnvelope<T> =
     | { ok: true; data: T }
     | { ok: false; error: { code: string; message: string } };
 
+/**
+ * What went wrong, in the terms the viewer needs to pick a recovery: a missing
+ * session has nothing to retry, a rate limit needs a pause, and a network or
+ * server failure is worth retrying straight away.
+ */
+export type ApiErrorKind = "not_found" | "rate_limited" | "network" | "server";
+
+export class ApiError extends Error {
+    readonly kind: ApiErrorKind;
+    readonly status: number | null;
+
+    constructor(kind: ApiErrorKind, message: string, status: number | null = null) {
+        super(message);
+        this.name = "ApiError";
+        this.kind = kind;
+        this.status = status;
+    }
+}
+
+function kindForStatus(status: number): ApiErrorKind {
+    if (status === 404) return "not_found";
+    if (status === 429) return "rate_limited";
+    return "server";
+}
+
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-    const response = await fetch(url, { signal, cache: "no-store" });
+    let response: Response;
+    try {
+        response = await fetch(url, { signal, cache: "no-store" });
+    } catch (error) {
+        if (signal?.aborted) {
+            throw error;
+        }
+        throw new ApiError("network", "Unable to reach the server. Check your connection and try again.");
+    }
     let body: ApiEnvelope<T>;
     try {
         body = (await response.json()) as ApiEnvelope<T>;
     } catch {
-        throw new Error(`Server error ${response.status}: ${response.statusText || "unexpected response"}`);
+        throw new ApiError(
+            kindForStatus(response.status),
+            `The server returned an unexpected response (${response.status}).`,
+            response.status
+        );
     }
     if (!response.ok || !body.ok) {
         const message = body.ok ? response.statusText : body.error.message;
-        throw new Error(message || "Request failed.");
+        throw new ApiError(
+            kindForStatus(response.status),
+            message || "The request failed.",
+            response.status
+        );
     }
     return body.data;
 }

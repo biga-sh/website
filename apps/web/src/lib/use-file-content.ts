@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { isValidHash } from "@spire/types";
 
 import { contentCache } from "./content-cache";
@@ -13,8 +13,13 @@ export type FileContentState = {
     error: string | null;
 };
 
+export type FileContentResult = FileContentState & {
+    /** Fetch again after a failure. */
+    retry: () => void;
+};
+
 function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Failed to load file.";
+    return error instanceof Error ? error.message : "The file could not be loaded.";
 }
 
 /**
@@ -29,8 +34,9 @@ export function useFileContent(
     path: string | null,
     ref: string | null,
     options: { binary?: boolean } = {}
-): FileContentState {
+): FileContentResult {
     const binaryHint = Boolean(options.binary);
+    const [retryNonce, setRetryNonce] = useState(0);
     const cached =
         ref && isValidHash(ref) ? contentCache.get(ref) : undefined;
 
@@ -99,9 +105,11 @@ export function useFileContent(
             cancelled = true;
             controller.abort();
         };
-    }, [sessionId, path, ref, binaryHint]);
+    }, [sessionId, path, ref, binaryHint, retryNonce]);
 
-    return state;
+    const retry = useCallback(() => setRetryNonce((nonce) => nonce + 1), []);
+
+    return { ...state, retry };
 }
 
 /**

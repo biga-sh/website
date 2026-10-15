@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -52,6 +52,14 @@ export const metadata: Metadata = {
     description,
   },
   robots: { index: true, follow: true },
+};
+
+/** Browser chrome matches the page background in each scheme. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0c0e" },
+  ],
 };
 
 export default function RootLayout({

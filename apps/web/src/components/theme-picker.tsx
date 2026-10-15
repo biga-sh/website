@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     Command,
     CommandEmpty,
@@ -47,10 +48,10 @@ export function ThemePicker() {
 
     const current = EDITOR_THEMES.find((theme) => theme.id === editorTheme);
     const label = !mounted
-        ? "Theme"
+        ? "Editor theme"
         : editorTheme === "auto"
-          ? "Auto"
-          : (current?.label ?? "Theme");
+          ? "Editor theme: match system"
+          : `Editor theme: ${current?.label ?? editorTheme}`;
 
     const renderItem = (id: string, name: string, mode: "light" | "dark" | "system") => (
         <CommandItem key={id} value={`${name} ${id}`} onSelect={() => select(id, mode)}>
@@ -66,20 +67,28 @@ export function ThemePicker() {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                    <PaletteIcon className="size-4" />
-                    <span className="hidden sm:inline">{label}</span>
-                    <span className="sr-only">Change editor theme</span>
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-0">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={label}
+                            className="text-muted-foreground hover:text-foreground"
+                        >
+                            <PaletteIcon className="size-4" />
+                        </Button>
+                    </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+            <PopoverContent align="end" className="w-60 p-0">
                 <Command>
-                    <CommandInput placeholder="Search themes…" />
+                    <CommandInput placeholder="Search themes…" aria-label="Search editor themes" />
                     <CommandList>
-                        <CommandEmpty>No theme found.</CommandEmpty>
+                        <CommandEmpty>No themes match.</CommandEmpty>
                         <CommandGroup heading="System">
-                            {renderItem("auto", "Auto (follow system)", "system")}
+                            {renderItem("auto", "Match system", "system")}
                         </CommandGroup>
                         <CommandGroup heading="Light">
                             {LIGHT_THEMES.map((theme) =>

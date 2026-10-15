@@ -35,8 +35,7 @@ export function listFilePaths(node: FileNode, into: string[] = []): string[] {
 }
 
 /**
- * Returns the lexicographically first file path in the tree, used to auto-open
- * a sensible default file when a viewer first loads a session.
+ * Returns the lexicographically first file path in the tree.
  */
 export function firstFilePath(node: FileNode): string | undefined {
     const paths = listFilePaths(node);
@@ -46,4 +45,33 @@ export function firstFilePath(node: FileNode): string | undefined {
         if (paths[i]! < first) first = paths[i]!;
     }
     return first;
+}
+
+const README_RE = /^readme(\.(md|mdx|markdown|txt|rst))?$/i;
+
+/**
+ * The file to open when a session has no recent change to point at: a root
+ * README if there is one, since that is where a reader would start, otherwise
+ * the first file in the tree.
+ */
+export function preferredFilePath(node: FileNode): string | undefined {
+    if (node.type === "directory") {
+        const readme = node.children.find(
+            (child) => child.type === "file" && !child.binary && README_RE.test(child.name)
+        );
+        if (readme) {
+            return readme.path;
+        }
+    }
+    return firstFilePath(node);
+}
+
+/**
+ * The first file in a change list that can be shown in the editor: one that
+ * still exists after the change and has text content.
+ */
+export function firstViewableChange(
+    changes: readonly { path: string; changeType: string; binary?: boolean }[]
+): string | undefined {
+    return changes.find((change) => change.changeType !== "deleted" && !change.binary)?.path;
 }

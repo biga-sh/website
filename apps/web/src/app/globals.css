@@ -6,77 +6,105 @@
 :root {
   --radius: 0.625rem;
   /* Every colour in this file is OKLCH. No hex, no rgb(). */
+  /*
+   * Spire blue means "now": the live broadcast, the newest checkpoint, the
+   * follow toggle. It is the one accent in the viewer, so it is never spent on
+   * decoration there.
+   */
   --spire-accent: oklch(0.5513 0.2473 265.85);
   --spire-accent-foreground: oklch(1 0 0);
+  /*
+   * Filled controls (white label on blue). Kept at the light-mode depth in both
+   * themes: the brighter dark-mode accent only reaches 3.8:1 under white text.
+   */
+  --spire-solid: oklch(0.5513 0.2473 265.85);
   /* Terminal surface: always dark, regardless of theme. */
   --terminal: oklch(0.1716 0.0097 255.65);
   --terminal-foreground: oklch(0.91 0 0);
+  /*
+   * Accent text on the terminal surface. The surface never changes, so neither
+   * does this: the light-mode accent only reaches 3.7:1 against it.
+   */
+  --terminal-accent: oklch(0.6173 0.2057 267.32);
+  /*
+   * Neutrals carry a faint cool cast (hue 260) so app chrome sits in the same
+   * family as the terminal surfaces and the brand blue.
+   */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.16 0.006 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.16 0.006 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.16 0.006 260);
+  --primary: oklch(0.21 0.006 260);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.965 0.002 260);
+  --secondary-foreground: oklch(0.21 0.006 260);
+  --muted: oklch(0.965 0.002 260);
+  /* 0.5 lightness keeps 11–12px metadata above 4.5:1 on white and on --sidebar. */
+  --muted-foreground: oklch(0.5 0.01 260);
+  --accent: oklch(0.955 0.003 260);
+  --accent-foreground: oklch(0.21 0.006 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Status hues, darkened in light mode so they pass as small text. */
+  --success: oklch(0.52 0.13 155);
+  --warning: oklch(0.56 0.15 55);
+  --info: oklch(0.52 0.13 235);
+  --border: oklch(0.915 0.004 260);
+  --input: oklch(0.915 0.004 260);
+  --ring: oklch(0.7 0.01 260);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(0.982 0.002 260);
+  --sidebar-foreground: oklch(0.16 0.006 260);
+  --sidebar-primary: oklch(0.21 0.006 260);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.94 0.004 260);
+  --sidebar-accent-foreground: oklch(0.16 0.006 260);
+  --sidebar-border: oklch(0.915 0.004 260);
+  --sidebar-ring: oklch(0.7 0.01 260);
 }
 
 .dark {
   --spire-accent: oklch(0.6173 0.2057 267.32);
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.155 0.005 260);
+  --foreground: oklch(0.97 0.002 260);
+  --card: oklch(0.195 0.006 260);
+  --card-foreground: oklch(0.97 0.002 260);
+  --popover: oklch(0.205 0.006 260);
+  --popover-foreground: oklch(0.97 0.002 260);
+  --primary: oklch(0.93 0.003 260);
+  --primary-foreground: oklch(0.2 0.006 260);
+  --secondary: oklch(0.255 0.006 260);
+  --secondary-foreground: oklch(0.97 0.002 260);
+  --muted: oklch(0.255 0.006 260);
+  --muted-foreground: oklch(0.7 0.01 260);
+  --accent: oklch(0.26 0.007 260);
+  --accent-foreground: oklch(0.97 0.002 260);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --success: oklch(0.77 0.15 158);
+  --warning: oklch(0.8 0.15 75);
+  --info: oklch(0.75 0.13 235);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.56 0.01 260);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  /* One quiet step above the canvas: felt, not seen. */
+  --sidebar: oklch(0.175 0.005 260);
+  --sidebar-foreground: oklch(0.97 0.002 260);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: oklch(0.25 0.007 260);
+  --sidebar-accent-foreground: oklch(0.97 0.002 260);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.56 0.01 260);
 }
 
 @theme inline {
@@ -84,6 +112,8 @@
   --font-mono: var(--font-geist-mono);
   --color-spire: var(--spire-accent);
   --color-spire-foreground: var(--spire-accent-foreground);
+  --color-spire-solid: var(--spire-solid);
+  --color-terminal-accent: var(--terminal-accent);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -103,6 +133,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -123,12 +156,36 @@
   --color-terminal-foreground: var(--terminal-foreground);
 }
 
+/*
+ * Motion. The viewer is a tool people sit in for an hour, so motion is short
+ * and only explains a change: something opened, something new arrived. These
+ * replace Tailwind's built-in curves, which are too soft to read as intentional.
+ */
+@theme {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* No double-tap zoom delay on controls, and no grey tap flash over our own
+     pressed states. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  a,
+  button,
+  input,
+  label,
+  [role="button"],
+  [role="treeitem"] {
+    touch-action: manipulation;
   }
   /*
    * Fragment links glide instead of teleporting, and land clear of the sticky
@@ -168,45 +225,6 @@
     );
   }
 
-  /*
-   * Hero variant: a full-bleed field that carries edge to edge and fades only
-   * near the bottom, so the grid reads as the page's ground rather than a boxed
-   * decoration. Lines run a touch stronger than the shared grid. Defined after
-   * `.spire-grid` so, at equal specificity, these overrides win.
-   */
-  .spire-grid-hero {
-    background-image:
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--foreground) 9%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--foreground) 9%, transparent) 1px,
-        transparent 1px
-      );
-    -webkit-mask-image: radial-gradient(
-      125% 100% at 50% 0%,
-      oklch(0 0 0) 58%,
-      transparent 100%
-    );
-    mask-image: radial-gradient(
-      125% 100% at 50% 0%,
-      oklch(0 0 0) 58%,
-      transparent 100%
-    );
-  }
-
-  /* Electric blue bloom behind the hero. */
-  .spire-bloom {
-    background: radial-gradient(
-      60% 50% at 50% 0%,
-      color-mix(in oklab, var(--spire-accent) 32%, transparent),
-      transparent 70%
-    );
-  }
-
   /* Block caret that trails the "currently typing" line. */
   .spire-caret-el {
     display: inline-block;
@@ -220,43 +238,266 @@
   }
 
   .spire-rise {
-    animation: spire-rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: spire-rise 500ms var(--ease-out) both;
   }
 
   /*
-   * Scroll-entry primitive. The element parks in a settled-but-absent state
-   * and resolves once an IntersectionObserver flips `data-revealed`. Stagger a
-   * group by setting `--reveal-delay` per child. Only `opacity`, `transform`
-   * and `filter` are touched, so this never triggers layout.
+   * Scroll-entry primitive. The element parks slightly low and transparent,
+   * then settles once an IntersectionObserver flips `data-revealed`. It fires
+   * once and stays: re-animating on every scroll-by would fight the reader.
+   * Stagger a group by setting `--reveal-delay` per child (50ms steps). Only
+   * `opacity` and `transform` change, so this never triggers layout.
    */
   .spire-reveal {
     opacity: 0;
-    transform: translate3d(0, 18px, 0);
-    filter: blur(4px);
+    transform: translate3d(0, 8px, 0);
     transition:
-      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-      filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity 500ms var(--ease-out),
+      transform 500ms var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
   }
 
   .spire-reveal[data-revealed="true"] {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 
   /*
-   * Film grain. Fixed and pointer-events-none so it never repaints with the
-   * scrolling content. Sits above sections, below the sticky nav.
+   * Translucent chrome (the floating site nav). Content scrolls underneath it;
+   * where the reader asked for less transparency it turns solid.
    */
-  .spire-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    opacity: 0.028;
+  .spire-glass {
+    background: color-mix(in oklab, var(--background) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+  }
+}
+
+/*
+ * Diagram system ("Plates & Wires"). Every landing-page illustration is built
+ * from these tokens: a wire (a connection), a plate (a checkpoint), and grid
+ * paper confined to the diagram's own canvas — never the page background.
+ */
+@layer base {
+  :root {
+    --diagram-grid: color-mix(in oklab, var(--foreground) 6%, transparent);
+    --diagram-wire: color-mix(in oklab, var(--foreground) 16%, transparent);
+    --diagram-wire-strong: color-mix(in oklab, var(--foreground) 34%, transparent);
+    --diagram-plate: color-mix(in oklab, var(--foreground) 82%, transparent);
+    --diagram-plate-dim: color-mix(in oklab, var(--foreground) 28%, transparent);
+  }
+  .dark {
+    --diagram-grid: color-mix(in oklab, var(--foreground) 8%, transparent);
+    --diagram-wire: color-mix(in oklab, var(--foreground) 20%, transparent);
+    --diagram-wire-strong: color-mix(in oklab, var(--foreground) 46%, transparent);
+    --diagram-plate: color-mix(in oklab, var(--foreground) 88%, transparent);
+    --diagram-plate-dim: color-mix(in oklab, var(--foreground) 32%, transparent);
+  }
+}
+
+@layer utilities {
+  /* Grid paper, scoped to a diagram canvas. Flat tiling, no vignette mask:
+     diagrams are framed by their container, not faded like the page ground. */
+  .spire-paper {
+    background-image:
+      linear-gradient(to right, var(--diagram-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--diagram-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
-  .dark .spire-grain {
-    opacity: 0.045;
+  /* Display and title type. Optical sizing: tight leading and negative
+     tracking that eases as the text gets smaller (Apple's size-specific
+     tracking discipline), so nothing is one fixed letter-spacing value. */
+  .text-display {
+    font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  .text-title {
+    font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
+    line-height: 1.08;
+    letter-spacing: -0.032em;
+    font-weight: 600;
+  }
+
+  /*
+   * Wire drawing. `pathLength="1"` on the <path> makes the dash math
+   * resolution-independent: a wire of any length draws in the same relative
+   * motion. Starts fully hidden so the reveal is the only time it is seen
+   * undrawn, then holds drawn once `[data-revealed]` sets stroke-dashoffset
+   * to 0. One-shot, so it never replays on repeated scroll-by.
+   */
+  .spire-wire {
+    fill: none;
+    stroke: var(--diagram-wire);
+    stroke-width: 1.25;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .spire-wire-strong {
+    stroke: var(--diagram-wire-strong);
+  }
+  [data-revealed="true"] .spire-wire-draw {
+    animation: spire-wire-draw 900ms var(--ease-in-out) both;
+    animation-delay: var(--wire-delay, 0ms);
+  }
+
+  /* A signal: a short blue dash travelling a drawn wire. Only present while
+     data is actually moving (a save, a fan-out), never a decorative loop. */
+  .spire-signal {
+    fill: none;
+    stroke: var(--spire-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 0.08 1;
+    opacity: 0;
+  }
+  [data-revealed="true"] .spire-signal-run {
+    animation: spire-signal-run 640ms var(--ease-in-out) both;
+    animation-delay: var(--signal-delay, 0ms);
+  }
+
+  /* Plate assembly: a checkpoint arriving. Starts low, faint and slightly
+     under scale (never scale(0)); settles with ease-out, the entering motion
+     this whole system is built from. */
+  .spire-plate {
+    transform-origin: center;
+  }
+  [data-revealed="true"] .spire-plate-in {
+    animation: spire-plate-in 420ms var(--ease-out) both;
+    animation-delay: var(--plate-delay, 0ms);
+  }
+
+  /*
+   * On-demand variants of the signal and plate motion, played by remounting
+   * the element (a changed `key`) rather than by `[data-revealed]`. Used for
+   * a user-triggered moment: clicking a file node in the hero "saves" it.
+   */
+  .spire-signal-pulse {
+    animation: spire-signal-run 640ms var(--ease-in-out) both;
+  }
+  .spire-plate-pulse {
+    animation: spire-plate-pulse 360ms var(--ease-out) both;
+  }
+
+  /* Generic staged-reveal stagger: pair with `style={{ "--i": index }}` on
+     children of a `[data-revealed]` ancestor. 60ms steps, inside the
+     30-80ms band the motion skills call for. */
+  .spire-stagger {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  [data-revealed="true"] .spire-stagger {
+    animation: spire-rise 420ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+}
+
+@keyframes spire-wire-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes spire-signal-run {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes spire-plate-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spire-plate-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@layer utilities {
+  /*
+   * "On air" ring for the live status dot. A ring that expands and fades says
+   * "broadcasting" without the whole dot blinking, which is easier to ignore
+   * while reading code.
+   */
+  .spire-live-ring {
+    position: relative;
+  }
+  .spire-live-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    animation: spire-live-ring 2.4s var(--ease-out) infinite;
+  }
+
+  /*
+   * A file row that changed in the save that just arrived. The tint fades on
+   * its own, so the tree points at the change once and then gets out of the way.
+   */
+  .spire-just-changed {
+    animation: spire-just-changed 1.6s var(--ease-out) both;
+  }
+}
+
+/*
+ * Server-highlighted code (Shiki, dual theme). Light colours are inline;
+ * dark mode swaps in the --shiki-dark values Shiki writes beside them.
+ */
+.spire-shiki pre {
+  margin: 0;
+  background: transparent !important;
+}
+.dark .spire-shiki pre,
+.dark .spire-shiki span {
+  color: var(--shiki-dark) !important;
+}
+
+@keyframes spire-live-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes spire-just-changed {
+  from {
+    background-color: color-mix(in oklab, var(--spire-accent) 22%, transparent);
+  }
+  to {
+    background-color: transparent;
   }
 }
 
@@ -264,7 +505,14 @@
   .spire-reveal {
     opacity: 1;
     transform: none;
-    filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .spire-glass {
+    background: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -282,7 +530,7 @@
 @keyframes spire-rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -301,12 +549,43 @@
     animation: none;
     opacity: 1;
   }
-  /* Reveals resolve instantly: the content is the point, the entrance is not. */
+  .spire-live-ring::after {
+    animation: none;
+    opacity: 0;
+  }
+  /*
+   * Reveals keep a short fade but lose the movement: gentler, not absent,
+   * so content still arrives rather than popping in.
+   */
   .spire-reveal {
+    transform: none;
+    transition: opacity 200ms ease;
+  }
+
+  /*
+   * Diagrams: every wire, signal and plate lands in its finished state
+   * immediately. The information the diagram carries survives; only the
+   * choreography that explained it is gone.
+   */
+  .spire-wire-draw,
+  .spire-signal-run,
+  .spire-plate-in,
+  .spire-stagger,
+  .spire-signal-pulse,
+  .spire-plate-pulse {
+    animation: none !important;
+  }
+  .spire-wire {
+    stroke-dashoffset: 0;
+  }
+  .spire-signal,
+  .spire-signal-pulse {
+    opacity: 0;
+  }
+  .spire-plate,
+  .spire-stagger {
     opacity: 1;
     transform: none;
-    filter: none;
-    transition: none;
   }
 }
 

@@ -41,6 +41,7 @@ interface FileTreeState {
     toggleExpanded: (path: string) => void;
     setExpanded: (path: string, expanded: boolean) => void;
     expandAncestors: (filePath: string) => void;
+    collapseAll: () => void;
     setSelectedPath: (path: string | null) => void;
     clearTree: () => void;
 }
@@ -152,6 +153,15 @@ export const useFileTreeStore = create<FileTreeState>((set) => ({
                 prefix = prefix ? `${prefix}/${segment}` : segment;
                 expandedPaths.add(prefix);
             }
+            return {
+                expandedPaths,
+                flattened: flattenTree(state.root, expandedPaths),
+            };
+        }),
+
+    collapseAll: () =>
+        set((state) => {
+            const expandedPaths = new Set<string>();
             return {
                 expandedPaths,
                 flattened: flattenTree(state.root, expandedPaths),

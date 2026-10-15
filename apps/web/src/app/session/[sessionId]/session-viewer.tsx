@@ -2,370 +2,382 @@
 
 import type { CheckpointChange } from "@spire/types";
 import { useEditorStore } from "@spire/stores/editor-store";
+import { useFileTreeStore } from "@spire/stores/file-tree-store";
 import { useHistoryStore } from "@spire/stores/history-store";
 import { useSessionStore } from "@spire/stores/session-store";
-import { CheckIcon, LinkIcon, PanelLeftIcon, RotateCwIcon } from "lucide-react";
-import Link from "next/link";
+import { FilesIcon, GitGraphIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
+import { toast } from "sonner";
 
 import { ActivityBar, type ActivityView } from "@/components/activity-bar";
 import { QuickOpen } from "@/components/quick-open";
-import { StatusBar } from "@/components/status-bar";
-import { ThemePicker } from "@/components/theme-picker";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CodeSkeleton } from "@/components/viewer/code-skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-import {
-  useSessionStream,
-  STATUS_LABELS,
-  STATUS_DOT,
-} from "@/lib/use-session-stream";
-
-/** Header button that copies the current session URL, with brief inline feedback. */
-function CopyLinkButton() {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    void navigator.clipboard
-      .writeText(window.location.href)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {
-        // Clipboard blocked (e.g. insecure context) — leave state unchanged.
-      });
-  }, []);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-7 gap-1.5 px-2 text-xs"
-        >
-          {copied ? (
-            <CheckIcon className="size-3.5 text-emerald-500" />
-          ) : (
-            <LinkIcon className="size-3.5" />
-          )}
-          <span className="hidden sm:inline">
-            {copied ? "Copied" : "Copy link"}
-          </span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>Copy this session&apos;s share link</TooltipContent>
-    </Tooltip>
-  );
-}
-
-/** Placeholder layout shown while the initial session state is loading. */
-function ViewerSkeleton() {
-  return (
-    <div className="flex min-h-0 flex-1">
-      <div className="bg-sidebar w-64 shrink-0 space-y-2 border-r p-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className="h-4"
-            style={{ width: `${60 + ((i * 7) % 35)}%` }}
-          />
-        ))}
-      </div>
-      <div className="flex-1 space-y-3 p-4">
-        <Skeleton className="h-5 w-1/3" />
-        {Array.from({ length: 14 }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className="h-3.5"
-            style={{ width: `${40 + ((i * 13) % 55)}%` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+import { fetchCheckpoint, fetchFileHistory } from "@/lib/session-api";
+import { displayTitle } from "@/lib/session-title";
+import { decorationsFromChanges, useSessionStream, type StreamStatus } from "@/lib/use-session-stream";
 
 import { CheckpointDiffPane } from "./checkpoint-diff-pane";
 import { CodeViewer } from "./code-viewer";
 import { FileTree } from "./file-tree";
-import { HistoryPanel } from "./history-panel";
+import { firstDiffable, HistoryPanel } from "./history-panel";
+import { SessionHeader } from "./session-header";
+import { SessionNotice } from "./session-notice";
+import { SessionUnavailable } from "./session-unavailable";
+
+/** Mirrors the loaded layout so nothing jumps when the session arrives. */
+function ViewerSkeleton() {
+    return (
+        <div className="flex h-svh flex-col">
+            <div className="flex h-12 shrink-0 items-center gap-3 border-b px-3">
+                <Skeleton className="size-7" />
+                <Skeleton className="h-3.5 w-40" />
+                <div className="ml-auto flex items-center gap-2">
+                    <Skeleton className="h-3 w-14" />
+                    <Skeleton className="hidden h-7 w-52 lg:block" />
+                    <Skeleton className="size-7" />
+                </div>
+            </div>
+            <div className="flex min-h-0 flex-1">
+                <div className="bg-sidebar hidden w-11 shrink-0 border-r md:block" />
+                <div className="bg-sidebar hidden w-[22%] max-w-80 shrink-0 space-y-3 border-r px-3 py-3 md:block">
+                    <Skeleton className="h-2.5 w-12" />
+                    {Array.from({ length: 10 }).map((_, i) => (
+                        <Skeleton key={i} className="h-3" style={{ width: `${45 + ((i * 17) % 45)}%` }} />
+                    ))}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="h-10 shrink-0 border-b" />
+                    <div className="h-8 shrink-0 border-b" />
+                    <CodeSkeleton />
+                </div>
+            </div>
+            <p role="status" className="sr-only">
+                Loading session…
+            </p>
+        </div>
+    );
+}
+
+const ANNOUNCEMENTS: Partial<Record<StreamStatus, string>> = {
+    live: "Connected. Watching live.",
+    reconnecting: "Connection lost. Reconnecting.",
+    offline: "Disconnected from the broadcast. Files may be out of date.",
+    ended: "This broadcast has ended.",
+};
+
+const ACTIVITY_BAR_PX = 44;
+
+/**
+ * The panel library sizes in percentages, but a file tree needs pixels: names
+ * stop being readable below ~200px however wide the window is. Convert pixel
+ * targets to percentages of the space the panels share.
+ */
+function sidebarSizes(windowWidth: number) {
+    const available = Math.max(1, windowWidth - ACTIVITY_BAR_PX);
+    const percent = (px: number) => Math.min(45, Math.max(10, (px / available) * 100));
+    return { defaultSize: percent(280), minSize: percent(200), maxSize: 45 };
+}
+
+/** Open a file in the editor and reveal it in the tree. */
+function openPath(path: string) {
+    useEditorStore.getState().openFile(path);
+    const tree = useFileTreeStore.getState();
+    tree.setSelectedPath(path);
+    tree.expandAncestors(path);
+}
 
 /**
  * `embed` renders the viewer for an `<iframe>` on the landing page: the
  * "session ended" notice is suppressed, because the surrounding page already
- * says what this is and its "Back home" link would strand the reader inside a
- * frame. Nothing else changes, so the preview is the real viewer.
+ * says what this is, and links that leave the viewer target the top window so
+ * they never strand a reader inside the frame. Nothing else changes, so the
+ * preview is the real viewer.
  */
 export function SessionViewer({
-  sessionId,
-  embed = false,
+    sessionId,
+    embed = false,
 }: {
-  sessionId: string;
-  embed?: boolean;
+    sessionId: string;
+    embed?: boolean;
 }) {
-  const { status, error, retry } = useSessionStream(sessionId);
-  const session = useSessionStore((state) => state.session);
-  const isMobile = useIsMobile();
-  const [view, setView] = useState<ActivityView>("explorer");
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [selectedChange, setSelectedChange] = useState<CheckpointChange | null>(
-    null,
-  );
-  const sidebarRef = useRef<ImperativePanelHandle>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const activeFilePath = useEditorStore((state) => state.activeFilePath);
+    const { status, ready, error, retry, reconnect } = useSessionStream(sessionId);
+    const session = useSessionStore((state) => state.session);
+    const isMobile = useIsMobile();
+    const [view, setView] = useState<ActivityView>("explorer");
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [quickOpen, setQuickOpen] = useState(false);
+    const [selectedChange, setSelectedChange] = useState<CheckpointChange | null>(null);
+    const sidebarRef = useRef<ImperativePanelHandle>(null);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const toggleSidebar = useCallback(() => {
-    const panel = sidebarRef.current;
-    if (!panel) {
-      return;
-    }
-    if (panel.isCollapsed()) {
-      panel.expand();
-    } else {
-      panel.collapse();
-    }
-  }, []);
-
-  // On mobile the tree/timeline live in a Sheet; opening a file should reveal
-  // the editor, so close the Sheet whenever the active file changes.
-  useEffect(() => {
-    if (activeFilePath) {
-      setSheetOpen(false);
-    }
-  }, [activeFilePath]);
-
-  const title = session?.title ?? "Spire session";
-  const description = session?.description ?? null;
-
-  const handleSelectChange = useCallback((change: CheckpointChange | null) => {
-    setSelectedChange(change);
-  }, []);
-
-  const handleOpenTimeline = useCallback(() => {
-    setView("timeline");
-  }, []);
-
-  const handleViewChange = useCallback(
-    (next: ActivityView) => {
-      if (isMobile) {
-        // On mobile the panels live in a Sheet; surface it when the rail is used.
-        setView(next);
-        setSheetOpen(true);
-      } else if (next === view) {
-        // Re-clicking the active view toggles the sidebar, VS Code-style.
-        toggleSidebar();
-      } else {
-        setView(next);
-        sidebarRef.current?.expand();
-      }
-      if (next === "timeline") {
-        const history = useHistoryStore.getState();
-        if (history.checkpoints.length > 0 && history.selectedSeq === null) {
-          const latest = history.checkpoints[0];
-          if (latest) {
-            history.selectSeq(latest.seq);
-          }
+    // A browser tab titled with the session's name is easier to find again.
+    useEffect(() => {
+        if (session) {
+            document.title = `${displayTitle(session)} · Spire`;
         }
-      }
-    },
-    [isMobile, view, toggleSidebar],
-  );
+    }, [session]);
 
-  return (
-    <div className="flex h-svh flex-col">
-      <header className="flex items-center justify-between gap-4 border-b px-4 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={() =>
-                  isMobile ? setSheetOpen(true) : toggleSidebar()
-                }
-                aria-label={
-                  isMobile
-                    ? "Open file explorer"
-                    : sidebarCollapsed
-                      ? "Show sidebar"
-                      : "Hide sidebar"
-                }
-                aria-pressed={!isMobile && !sidebarCollapsed}
-              >
-                <PanelLeftIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isMobile
-                ? "Open file explorer"
-                : sidebarCollapsed
-                  ? "Show sidebar"
-                  : "Hide sidebar"}
-            </TooltipContent>
-          </Tooltip>
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-semibold">{title}</span>
-            {description && (
-              <span className="text-muted-foreground truncate text-xs">
-                {description}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-          <CopyLinkButton />
-          <Badge
-            variant="secondary"
-            className="hidden font-mono sm:inline-flex"
-          >
-            {sessionId}
-          </Badge>
-          <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-            <span
-              className={cn(
-                "size-2 rounded-full",
-                STATUS_DOT[status],
-                status === "live" && "animate-pulse",
-              )}
-            />
-            {STATUS_LABELS[status]}
-          </span>
-          <ThemePicker />
-        </div>
-      </header>
-
-      {status === "ended" && !embed && (
-        <Alert className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-none border-x-0 border-t-0 py-1.5 text-center text-xs">
-          <AlertDescription>
-            This session has ended, so you&apos;re viewing its final state.
-          </AlertDescription>
-          <span className="flex items-center gap-2">
-            <Button asChild size="sm" variant="default" className="h-6 px-2 text-xs">
-              <Link href="/docs#getting-started">Start your own session</Link>
-            </Button>
-            <Button asChild size="sm" variant="ghost" className="h-6 px-2 text-xs">
-              <Link href="/">Back home</Link>
-            </Button>
-          </span>
-        </Alert>
-      )}
-      {status === "error" && (
-        <Alert
-          variant="destructive"
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-none border-x-0 border-t-0 py-1.5 text-center text-xs"
-        >
-          <AlertDescription>
-            {error ?? "Lost connection to the session."}
-          </AlertDescription>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={retry}
-            className="h-6 gap-1.5 px-2 text-xs"
-          >
-            <RotateCwIcon className="size-3" />
-            Retry
-          </Button>
-        </Alert>
-      )}
-
-      {(() => {
-        if (status === "connecting" && !session) {
-          return <ViewerSkeleton />;
+    // Checkpoints that landed while the timeline wasn't on screen earn a dot
+    // on the Timeline button.
+    const latestSeq = useHistoryStore((state) => state.checkpoints[0]?.seq ?? null);
+    const [seenSeq, setSeenSeq] = useState<number | null>(null);
+    const timelineOnScreen = view === "timeline" && (isMobile ? drawerOpen : !sidebarCollapsed);
+    useEffect(() => {
+        if (latestSeq !== null && (seenSeq === null || timelineOnScreen)) {
+            setSeenSeq(latestSeq);
         }
+    }, [latestSeq, seenSeq, timelineOnScreen]);
+    const unseenTimeline = latestSeq !== null && seenSeq !== null && latestSeq > seenSeq;
 
-        const sidePanel =
-          view === "explorer" ? (
-            <FileTree
-              sessionId={sessionId}
-              onOpenTimeline={handleOpenTimeline}
-            />
-          ) : (
-            <HistoryPanel
-              sessionId={sessionId}
-              selectedChange={selectedChange}
-              onSelectChange={handleSelectChange}
-            />
-          );
-
-        const mainContent =
-          view === "timeline" ? (
-            <CheckpointDiffPane
-              sessionId={sessionId}
-              selectedChange={selectedChange}
-            />
-          ) : (
-            <CodeViewer sessionId={sessionId} />
-          );
-
+    const toggleSidebar = useCallback(() => {
         if (isMobile) {
-          return (
-            <div className="flex min-h-0 flex-1">
-              <ActivityBar view={view} onChange={handleViewChange} />
-              <div className="min-w-0 flex-1">{mainContent}</div>
-              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetContent
-                  side="left"
-                  className="bg-sidebar text-sidebar-foreground w-[85vw] max-w-sm p-0"
-                >
-                  <SheetTitle className="px-3 pt-3 text-xs font-medium tracking-wide uppercase">
-                    {view === "explorer" ? "Explorer" : "Timeline"}
-                  </SheetTitle>
-                  <div className="min-h-0 flex-1 overflow-hidden">{sidePanel}</div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          );
+            setDrawerOpen(true);
+            return;
         }
+        const panel = sidebarRef.current;
+        if (panel?.isCollapsed()) {
+            panel.expand();
+        } else {
+            panel?.collapse();
+        }
+    }, [isMobile]);
 
-        return (
-          <div className="flex min-h-0 flex-1">
-            {!sidebarCollapsed && (
-              <ActivityBar view={view} onChange={handleViewChange} />
-            )}
-            <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
-              <ResizablePanel
-                ref={sidebarRef}
-                defaultSize={22}
-                minSize={14}
-                maxSize={40}
-                collapsible
-                collapsedSize={0}
-                onCollapse={() => setSidebarCollapsed(true)}
-                onExpand={() => setSidebarCollapsed(false)}
-                className="bg-sidebar text-sidebar-foreground min-w-0"
-              >
-                {sidePanel}
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={78}>{mainContent}</ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
+    /** Show the timeline, opening its newest checkpoint if nothing is picked. */
+    const showTimeline = useCallback(() => {
+        setView("timeline");
+        if (isMobile) {
+            setDrawerOpen(true);
+        } else {
+            sidebarRef.current?.expand();
+        }
+        const history = useHistoryStore.getState();
+        const latest = history.checkpoints[0];
+        if (latest && history.selectedSeq === null) {
+            history.selectSeq(latest.seq);
+            const cached = history.bySeq.get(latest.seq);
+            if (cached) {
+                useFileTreeStore.getState().setDecorations(decorationsFromChanges(cached.changes));
+                setSelectedChange(firstDiffable(cached.changes));
+            }
+        }
+    }, [isMobile]);
+
+    const handleViewChange = useCallback(
+        (next: ActivityView) => {
+            if (!isMobile && next === view && !sidebarCollapsed) {
+                // Picking the open view again hides the sidebar, as in most editors.
+                sidebarRef.current?.collapse();
+                return;
+            }
+            if (next === "timeline") {
+                showTimeline();
+                return;
+            }
+            setView(next);
+            sidebarRef.current?.expand();
+        },
+        [isMobile, view, sidebarCollapsed, showTimeline]
+    );
+
+    /** "Show in timeline": jump to the newest checkpoint that touched the file. */
+    const revealInTimeline = useCallback(
+        async (path: string) => {
+            showTimeline();
+            try {
+                const [latest] = await fetchFileHistory(sessionId, path);
+                if (!latest) {
+                    return;
+                }
+                const history = useHistoryStore.getState();
+                const checkpoint =
+                    history.bySeq.get(latest.seq) ?? (await fetchCheckpoint(sessionId, latest.seq));
+                history.cacheCheckpoint(checkpoint);
+                history.selectSeq(latest.seq);
+                useFileTreeStore.getState().setDecorations(decorationsFromChanges(checkpoint.changes));
+                setSelectedChange(
+                    checkpoint.changes.find((change) => change.path === path) ?? firstDiffable(checkpoint.changes)
+                );
+            } catch {
+                toast.error("Unable to find this file's changes", {
+                    description: "Check your connection and try again.",
+                });
+            }
+        },
+        [sessionId, showTimeline]
+    );
+
+    const openInEditor = useCallback((path: string) => {
+        setView("explorer");
+        setDrawerOpen(false);
+        openPath(path);
+    }, []);
+
+    const openQuickOpen = useCallback(() => setQuickOpen(true), []);
+    const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+    if (status === "unavailable" && error) {
+        return <SessionUnavailable sessionId={sessionId} error={error} embed={embed} onRetry={retry} />;
+    }
+
+    if (!ready || !session) {
+        return <ViewerSkeleton />;
+    }
+
+    // Only reached in the browser: the session is never loaded during SSR.
+    const sidebar = sidebarSizes(window.innerWidth);
+
+    const sidePanel =
+        view === "explorer" ? (
+            <FileTree
+                sessionId={sessionId}
+                ended={status === "ended"}
+                comfortable={isMobile}
+                onOpenTimeline={(path) => void revealInTimeline(path)}
+                onOpenQuickOpen={openQuickOpen}
+                onFileOpened={isMobile ? closeDrawer : undefined}
+            />
+        ) : (
+            <HistoryPanel
+                sessionId={sessionId}
+                selectedChange={selectedChange}
+                onSelectChange={setSelectedChange}
+                comfortable={isMobile}
+                onChangePicked={isMobile ? closeDrawer : undefined}
+            />
         );
-      })()}
 
-      <StatusBar sessionId={sessionId} status={status} />
-      <QuickOpen />
-    </div>
-  );
+    const mainContent =
+        view === "timeline" ? (
+            <CheckpointDiffPane
+                sessionId={sessionId}
+                selectedChange={selectedChange}
+                onSelectChange={setSelectedChange}
+                onOpenInEditor={openInEditor}
+                onShowTimeline={isMobile || sidebarCollapsed ? showTimeline : undefined}
+            />
+        ) : (
+            <CodeViewer sessionId={sessionId} onOpenQuickOpen={openQuickOpen} />
+        );
+
+    return (
+        <div className="flex h-svh flex-col">
+            <a
+                href="#viewer-main"
+                className="focus:bg-background focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:px-3 focus:py-2 focus:text-sm focus:shadow-md focus:ring-2"
+            >
+                Skip to code
+            </a>
+            <SessionHeader
+                sessionId={sessionId}
+                status={status}
+                embed={embed}
+                isMobile={isMobile}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={toggleSidebar}
+                onOpenQuickOpen={openQuickOpen}
+            />
+            <SessionNotice status={status} embed={embed} onReconnect={reconnect} />
+
+            {isMobile ? (
+                <>
+                    <main id="viewer-main" tabIndex={-1} className="min-h-0 flex-1 outline-none">
+                        {mainContent}
+                    </main>
+                    <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+                        <SheetContent
+                            side="left"
+                            className="bg-sidebar text-sidebar-foreground w-[88vw] max-w-sm gap-0 p-0"
+                        >
+                            <SheetTitle className="sr-only">Browse session</SheetTitle>
+                            <SheetDescription className="sr-only">
+                                Switch between the session&apos;s files and its timeline of checkpoints.
+                            </SheetDescription>
+                            <div className="flex h-13 shrink-0 items-center border-b pr-12 pl-2.5">
+                                <ToggleGroup
+                                    type="single"
+                                    value={view}
+                                    onValueChange={(next) => {
+                                        if (next === "explorer" || next === "timeline") {
+                                            handleViewChange(next);
+                                        }
+                                    }}
+                                    aria-label="View"
+                                    className="w-full"
+                                >
+                                    <ToggleGroupItem value="explorer" className="flex-1 text-[13px]">
+                                        <FilesIcon />
+                                        Files
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem value="timeline" className="relative flex-1 text-[13px]">
+                                        <GitGraphIcon />
+                                        Timeline
+                                        {unseenTimeline && view !== "timeline" && (
+                                            <span aria-label="new checkpoints" className="bg-spire size-1.5 rounded-full" />
+                                        )}
+                                    </ToggleGroupItem>
+                                </ToggleGroup>
+                            </div>
+                            <div className="min-h-0 flex-1">{sidePanel}</div>
+                        </SheetContent>
+                    </Sheet>
+                </>
+            ) : (
+                <div className="flex min-h-0 flex-1">
+                    <ActivityBar
+                        view={view}
+                        sidebarOpen={!sidebarCollapsed}
+                        unseenTimeline={unseenTimeline}
+                        onChange={handleViewChange}
+                    />
+                    <ResizablePanelGroup
+                        direction="horizontal"
+                        autoSaveId="spire-viewer-layout"
+                        onLayout={(sizes) => setSidebarCollapsed((sizes[0] ?? 0) === 0)}
+                        className="min-h-0 flex-1"
+                    >
+                        <ResizablePanel
+                            ref={sidebarRef}
+                            id="sidebar"
+                            order={1}
+                            {...sidebar}
+                            collapsible
+                            collapsedSize={0}
+                            className="bg-sidebar text-sidebar-foreground min-w-0"
+                        >
+                            <aside aria-label={view === "explorer" ? "Files" : "Timeline"} className="h-full">
+                                {sidePanel}
+                            </aside>
+                        </ResizablePanel>
+                        <ResizableHandle />
+                        <ResizablePanel id="main" order={2} defaultSize={100 - sidebar.defaultSize} minSize={40}>
+                            <main id="viewer-main" tabIndex={-1} className="h-full outline-none">
+                                {mainContent}
+                            </main>
+                        </ResizablePanel>
+                    </ResizablePanelGroup>
+                </div>
+            )}
+
+            <QuickOpen
+                open={quickOpen}
+                onOpenChange={setQuickOpen}
+                onOpenFile={(path) => {
+                    setView("explorer");
+                    setDrawerOpen(false);
+                    openPath(path);
+                }}
+            />
+            <p role="status" className="sr-only">
+                {ANNOUNCEMENTS[status] ?? ""}
+            </p>
+            <Toaster />
+        </div>
+    );
 }

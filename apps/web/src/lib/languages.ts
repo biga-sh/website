@@ -39,3 +39,13 @@ export function languageForPath(path: string): string {
     const extension = name.includes(".") ? name.split(".").pop()! : "";
     return EXTENSION_LANGUAGE.get(extension.toLowerCase()) ?? "plaintext";
 }
+
+const LANGUAGE_NAMES = new Map(bundledLanguagesInfo.map((lang) => [lang.id, lang.name]));
+
+/** Human name for a language id, e.g. "typescript" → "TypeScript". */
+export function languageLabel(id: string): string {
+    if (id === "plaintext") {
+        return "Plain text";
+    }
+    return LANGUAGE_NAMES.get(id) ?? id;
+}

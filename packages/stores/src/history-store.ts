@@ -27,6 +27,17 @@ interface HistoryState {
 
     setInitial: (checkpoints: CheckpointSummary[]) => void;
     addLive: (checkpoint: Checkpoint) => void;
+    /**
+     * Appends an older page of summaries (from the paginated checkpoints
+     * endpoint) to the end of the list. Duplicates are ignored.
+     */
+    appendOlder: (summaries: CheckpointSummary[]) => void;
+    /**
+     * Adds summaries newer than anything already listed, e.g. checkpoints that
+     * landed while the live stream was reconnecting and so never arrived as
+     * events. Counts toward `newWhileBrowsing` like a live checkpoint would.
+     */
+    mergeNewer: (summaries: CheckpointSummary[]) => void;
     cacheCheckpoint: (checkpoint: Checkpoint) => void;
     selectSeq: (seq: number | null) => void;
     clear: () => void;
@@ -66,6 +77,36 @@ export const useHistoryStore = create<HistoryState>((set) => ({
                     state.selectedSeq === null
                         ? state.newWhileBrowsing
                         : state.newWhileBrowsing + 1,
+            };
+        }),
+
+    appendOlder: (summaries) =>
+        set((state) => {
+            const known = new Set(state.checkpoints.map((c) => c.seq));
+            const older = summaries
+                .filter((summary) => !known.has(summary.seq))
+                .sort((a, b) => b.seq - a.seq);
+            if (older.length === 0) {
+                return state;
+            }
+            return { checkpoints: [...state.checkpoints, ...older] };
+        }),
+
+    mergeNewer: (summaries) =>
+        set((state) => {
+            const newest = state.checkpoints[0]?.seq ?? -1;
+            const newer = summaries
+                .filter((summary) => summary.seq > newest)
+                .sort((a, b) => b.seq - a.seq);
+            if (newer.length === 0) {
+                return state;
+            }
+            return {
+                checkpoints: [...newer, ...state.checkpoints],
+                newWhileBrowsing:
+                    state.selectedSeq === null
+                        ? state.newWhileBrowsing
+                        : state.newWhileBrowsing + newer.length,
             };
         }),
 

@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 import { DEMO_SESSION_ID } from "@/lib/demo-session";
 
 export const runtime = "edge";
-export const alt = "Spire — share the code, not your screen";
+export const alt = "Spire: share the code, not your screen";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -237,8 +237,8 @@ export default function OpengraphImage() {
                   maxWidth: 440,
                 }}
               >
-                Run one command. The files you save stream to a browser tab —
-                read-only, no account.
+                Run one command. The files you save stream to a browser tab,
+                read-only, with no account.
               </div>
             </div>
 

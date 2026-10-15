@@ -39,7 +39,10 @@ export function Surface({
 
 export function Code({ children }: { children: ReactNode }) {
   return (
-    <code className="bg-muted text-foreground/90 rounded-md px-1.5 py-0.5 font-mono text-[0.85em]">
+    <code
+      translate="no"
+      className="bg-muted text-foreground/90 rounded-md px-1.5 py-0.5 font-mono text-[0.85em]"
+    >
       {children}
     </code>
   );
@@ -57,8 +60,9 @@ export function IconWell({
       aria-hidden
       className={cn(
         "grid size-8 shrink-0 place-items-center rounded-full",
-        "transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-        "group-hover:translate-x-0.5 group-hover:-translate-y-px",
+        // A small nudge toward the destination on hover; still under reduced motion.
+        "transition-[translate,background-color] duration-200 ease-out",
+        "motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-px",
         className
       )}
     >

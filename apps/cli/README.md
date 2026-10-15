@@ -1,51 +1,36 @@
-# @zenshilabs/spire
+# @zenshilabs/spire — deprecated
 
-Node.js CLI for Spire — broadcast a local directory so others can watch it live in real time. No accounts or sign-in; the session ID is the share link.
-
-## Install
-
-Requires Node.js >= 22 (active LTS lines only).
+> **This package is deprecated and no longer maintained.**
+> Spire is now **biga**, and the CLI is a single Go binary with no Node.js
+> requirement. Install the latest release from GitHub.
 
 ```sh
-# one-off, no install
-npx @zenshilabs/spire start
+# macOS, Linux, FreeBSD
+curl -fsSL https://raw.githubusercontent.com/biga-sh/cli/main/install.sh | sh
 
-# or install globally for the `spire` command
-npm install -g @zenshilabs/spire
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/biga-sh/cli/main/install.ps1 | iex
 ```
 
-## Commands
+- **Latest release:** <https://github.com/biga-sh/cli/releases/latest>
+- **Source and docs:** <https://github.com/biga-sh/cli>
+- **Server and website:** <https://github.com/biga-sh/website>
 
-```
-spire start [--dir <path>] [--title <text>] [--session <id>]
-spire status
-spire stop
-```
+## Moving over
 
-By default the CLI talks to `http://localhost:3000`. Point it at a hosted Spire
-instance by setting `SPIRE_API_URL` (e.g. `SPIRE_API_URL=https://spire.example.com spire start`).
+| Spire (this package) | biga |
+| --- | --- |
+| `npx @zenshilabs/spire start` | `biga start` |
+| `spire status`, `spire stop` | `biga status`, `biga stop` (and `biga list`, `biga open`) |
+| `SPIRE_API_URL` | `BIGA_API_URL` |
+| `spire.json` | `biga.json` |
+| `~/.spire/sessions.json` | `~/.biga/sessions.json` |
 
+Existing session links keep working with the server; only the CLI changed. The
+new CLI doesn't read `~/.spire`, so the first `biga start` in a folder creates
+a new session rather than rejoining an old one. Pass `--session <id>` to reuse
+an existing link.
 
-> For how the CLI fits together with the web API and browser viewer, see the
-> [architecture overview](https://github.com/ZenshiLabs/spire#architecture).
-
-## Session ID Resolution
-
-`spire start` resolves the session ID in priority order:
-
-1. `--session <id>` flag (explicit override).
-2. ID saved for this directory in `~/.spire/sessions.json` → **rejoin** the existing URL.
-3. Freshly generated 8-character base36 ID, then saved for this directory.
-
-Because local files are always the source of truth, every `start` re-uploads a fresh snapshot. Crashes, server restarts, and dropped connections recover by re-running the same command.
-
-## Local State
-
-`~/.spire/sessions.json` — registry of sessions keyed by absolute directory path. Enables the sticky session ID that makes a project's share URL permanent across CLI restarts.
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SPIRE_API_URL` | `http://localhost:3000` | API server base URL |
-| `API_BASE_URL` | `http://localhost:3000` | Fallback (lower precedence than `SPIRE_API_URL`) |
+0.5.0 is the final release: its `spire` command prints this notice and exits
+with status 1, so scripts that still call it fail loudly instead of quietly
+doing nothing. Nothing further will be published.

@@ -1,77 +1,32 @@
 #!/usr/bin/env node
-import { cancel, intro, isCancel, log, outro, select } from "@clack/prompts";
+/*
+ * The last release of @zenshilabs/spire. Spire is now biga, a standalone Go
+ * binary, so this package no longer broadcasts anything: it says where the
+ * real CLI went and exits non-zero, so a script that still calls `spire`
+ * fails loudly instead of quietly doing nothing.
+ *
+ * The rest of src/ is the old implementation, kept only until it is deleted.
+ * Nothing imports it, and the bundle contains none of it.
+ */
 
-import { getApiBaseUrl } from "./config.js";
-import {
-    type CliCommand,
-    getArgCommand,
-    getCommandPromptOptions,
-    parseOptions,
-    runCommand,
-} from "./commands/handler.js";
-import { checkForUpdate } from "./update-check.js";
+const MESSAGE = `
+spire has been replaced by biga.
 
-type RuntimeProcess = {
-    argv: string[];
-    cwd: () => string;
-    exit: (code?: number) => never;
-};
+biga is a single binary with no Node.js requirement. Install the latest
+release:
 
-function getRuntimeProcess(): RuntimeProcess {
-    const runtime = globalThis as { process?: RuntimeProcess };
+  macOS, Linux, FreeBSD   curl -fsSL https://raw.githubusercontent.com/biga-sh/cli/main/install.sh | sh
+  Windows (PowerShell)    irm https://raw.githubusercontent.com/biga-sh/cli/main/install.ps1 | iex
+  Go 1.26+                go install github.com/biga-sh/cli/cmd/biga@latest
 
-    if (!runtime.process) {
-        throw new Error("Spire CLI must run in a Node.js environment.");
-    }
+  Releases             https://github.com/biga-sh/cli/releases/latest
+  Server and website   https://github.com/biga-sh/website
 
-    return runtime.process;
-}
+Then run \`biga start\` in the same folder. The commands carry over (start,
+status, stop), and SPIRE_API_URL is now BIGA_API_URL. biga doesn't read
+~/.spire, so the first run creates a new session; pass --session <id> to keep
+an existing link.
+`;
 
-async function promptForCommand(): Promise<CliCommand | null> {
-    const options = getCommandPromptOptions();
-
-    const selected = await select({
-        message: "What do you want to do?",
-        options,
-    });
-
-    if (isCancel(selected)) {
-        return null;
-    }
-
-    return selected;
-}
-
-async function main() {
-    // Fire immediately so the registry fetch runs in parallel with sync startup work.
-    const updateCheck = checkForUpdate();
-
-    intro("Spire CLI");
-
-    // By the time intro() renders, the fetch is already in flight.
-    // Awaiting here shows any update warning before the user picks a command.
-    await updateCheck;
-
-    const runtimeProcess = getRuntimeProcess();
-    const apiBaseUrl = getApiBaseUrl();
-
-    const command = getArgCommand(runtimeProcess.argv) ?? (await promptForCommand());
-    const options = parseOptions(runtimeProcess);
-
-    if (!command) {
-        cancel("Cancelled.");
-        runtimeProcess.exit(0);
-        return;
-    }
-
-    await runCommand(command, { apiBaseUrl, options });
-
-    outro("Done");
-}
-
-void main().catch((error: unknown) => {
-    const runtimeProcess = getRuntimeProcess();
-    const message = error instanceof Error ? error.message : String(error);
-    log.error(message);
-    runtimeProcess.exit(1);
-});
+process.stderr.write(`${MESSAGE.trimStart()}\n`);
+process.exit(1);

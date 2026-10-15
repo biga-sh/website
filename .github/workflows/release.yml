@@ -1,20 +1,22 @@
 name: Release
 
+# The last release of the deprecated Node CLI, @zenshilabs/spire. It publishes
+# a version whose only job is to tell people where biga went (see
+# apps/cli/src/index.ts). Run it by hand once; there is no automatic trigger,
+# so a release of anything else in this repository can never publish to npm.
+#
+# Publishing uses npm trusted publishing: the package is configured on npmjs.com
+# to trust this workflow file and the `release` environment, so there is no
+# token to manage. Keep both names as they are.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  verify:
-    uses: ./.github/workflows/ci.yml
-
   publish:
     name: Publish to npm
-    needs: verify
     runs-on: ubuntu-latest
 
     environment: release
@@ -38,8 +40,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build the CLI
-        run: pnpm exec turbo run build --filter=@zenshilabs/spire
+      - name: Lint, type-check, and build the package
+        run: pnpm exec turbo run lint check-types build --filter=@zenshilabs/spire
 
       - name: Publish
         run: pnpm --filter @zenshilabs/spire publish --no-git-checks --access public --provenance

@@ -15,6 +15,8 @@
     "api",
     "---Running it---",
     "configuration",
-    "self-hosting"
+    "self-hosting",
+    "docker",
+    "networking"
   ]
 }

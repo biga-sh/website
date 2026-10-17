@@ -22,23 +22,50 @@ Every JSON response is wrapped in an envelope:
 
 | Status | `error.code` | Meaning |
 | --- | --- | --- |
-| 400 | `invalid_request` | The body or a parameter is malformed. |
+| 400 | `invalid_request` | The body or a parameter is malformed. `error.details` names the field. |
+| 401 | `unauthorized` | A write without the session's owner token. |
+| 401 | `access_key_required`, `access_key_invalid` | The server requires an access key and none, or a wrong one, was sent. |
+| 403 | `forbidden` | The owner token belongs to another session, or is wrong. |
+| 403 | `session_locked` | The session has no owner token and accepts no writes. Start a new one. |
 | 404 | `not_found` | No such session, checkpoint or file version. |
 | 409 | `invalid_state`, `inactive_session` | The session has ended. |
-| 413 | `payload_too_large` | The body is over the endpoint's limit. |
-| 429 | `rate_limited` | Slow down; see the limits below. |
+| 413 | `payload_too_large`, `storage_quota_exceeded` | The body is over the endpoint's limit, or the session is full. |
+| 415 | `unsupported_encoding`, `unsupported_media_type` | Send JSON, plain or gzip. |
+| 429 | `rate_limited` | Slow down. `Retry-After` says for how long. |
 
-There is no authentication. Possessing the session ID is the permission to
-watch it; writes are not separately protected, so don't expect a session to be
-private beyond an unguessable ID.
+## Authentication
+
+**Reads are public.** Holding a session's ID is the permission to watch it,
+which is what makes a link shareable without accounts.
+
+**Writes need the session's owner token.** The response that creates a
+session carries a `token`, once:
+
+```json title="PUT /api/sessions/k3f9zq2a → 201"
+{ "ok": true, "data": { "id": "k3f9zq2a", "status": "active", "token": "bgs_…", "shareUrl": "https://biga.example.com/session/k3f9zq2a" } }
+```
+
+The server keeps only a SHA-256 of it. Every later write to that session
+(reactivating it, snapshot, checkpoint, heartbeat, manifest, ending it) sends
+it as `Authorization: Bearer bgs_…`. The CLI stores it for you; see
+[Sessions](/docs/sessions#local-state).
+
+**Servers may require an access key.** When the operator configures access
+keys, every write also needs `X-Biga-Key: bgk_…`. The CLI sends
+`BIGA_ACCESS_KEY`. Viewers never need one.
+
+Writes are checked before their body is read, and repeated bad tokens or keys
+from one client lock it out for a while.
 
 ## Endpoints
 
 ### Used by the CLI
 
+Each needs the owner token, except creating a session.
+
 | Method | Path | Does |
 | --- | --- | --- |
-| `PUT` | `/api/sessions/:id` | Creates the session, or reactivates it. |
+| `PUT` | `/api/sessions/:id` | Creates the session (`201`, with its token), or reactivates it for its owner (`200`). |
 | `DELETE` | `/api/sessions/:id` | Ends the session. |
 | `POST` | `/api/sessions/:id/snapshot` | Replaces the whole tree. Answers `202`. |
 | `POST` | `/api/sessions/:id/checkpoint` | Records one batch of changes. Answers `202`. |
@@ -67,8 +94,13 @@ doesn't gets plain JSON, and a `415` makes the CLI fall back too.
 | --- | --- | --- |
 | `snapshot` | 32 MiB | 15 per minute, per session |
 | `checkpoint` | 8 MiB | 240 per minute, per session |
-| `PUT` session | 16 KiB | 30 per hour, per client IP |
+| `PUT` session | 16 KiB | 60 per hour, per client |
 | `heartbeat` | none | 30 per minute, per session |
+| any read | none | 3000 per minute, per client |
+
+Limits apply to the body after decompression. A client is an IPv4 address, or
+an IPv6 /64. Each text file's `hash` must be the SHA-256 of its `content`;
+paths must be relative, with no `.` or `..` segments.
 
 The CLI splits a large change set across several checkpoints, each under 6 MB
 uncompressed, so a branch switch stays inside the 8 MiB limit.

@@ -13,9 +13,6 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@shikijs/monaco": "^4.2.0",
-    "@biga/db": "workspace:^",
-    "@biga/redis": "workspace:*",
-    "@biga/server": "workspace:*",
     "@biga/stores": "workspace:*",
     "@biga/types": "workspace:*",
     "@tanstack/react-virtual": "^3.14.3",
@@ -24,7 +21,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cn": "^0.4.0",
-    "effect": "^3.16.0",
     "fumadocs-core": "16.17.3",
     "fumadocs-mdx": "15.4.7",
     "fumadocs-mermaid": "^1.3.1",

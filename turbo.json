@@ -2,26 +2,12 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": [
-    "DATABASE_URL",
-    "REDIS_URL",
-    "CRON_SECRET",
+    "NODE_ENV",
     "NEXT_PUBLIC_SITE_URL",
-    "BIGA_EAGER_MAX_BYTES",
-    "BIGA_EAGER_MAX_FILES",
-    "BIGA_SESSION_STALE_MS",
-    "BIGA_MAX_SNAPSHOT_BYTES",
-    "BIGA_MAX_CHECKPOINT_BYTES",
-    "BIGA_MAX_SESSION_BYTES",
-    "BIGA_RETENTION_DAYS",
-    "BIGA_DEMO_SESSION_ID",
-    "SPIRE_EAGER_MAX_BYTES",
-    "SPIRE_EAGER_MAX_FILES",
-    "SPIRE_SESSION_STALE_MS",
-    "SPIRE_MAX_SNAPSHOT_BYTES",
-    "SPIRE_MAX_CHECKPOINT_BYTES",
-    "SPIRE_MAX_SESSION_BYTES",
-    "SPIRE_RETENTION_DAYS",
-    "SPIRE_DEMO_SESSION_ID"
+    "NEXT_PUBLIC_BIGA_API_URL",
+    "BIGA_SERVER_URL",
+    "NEXT_OUTPUT",
+    "BIGA_DEMO_SESSION_ID"
   ],
   "tasks": {
     "build": {
@@ -68,32 +54,6 @@
         "dist/**"
       ]
     },
-    "@biga/db#build": {
-      "dependsOn": [
-        "@biga/types#build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
-    },
-    "@biga/redis#build": {
-      "dependsOn": [
-        "@biga/types#build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
-    },
-    "@biga/server#build": {
-      "dependsOn": [
-        "@biga/db#build",
-        "@biga/redis#build",
-        "@biga/types#build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
-    },
     "@zenshilabs/spire#build": {
       "dependsOn": [
         "^build"
@@ -117,10 +77,7 @@
       "persistent": true,
       "dependsOn": [
         "@biga/types#build",
-        "@biga/stores#build",
-        "@biga/db#build",
-        "@biga/redis#build",
-        "@biga/server#build"
+        "@biga/stores#build"
       ]
     }
   }

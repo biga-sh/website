@@ -1,8 +1,9 @@
 # apps/web
 
-The Next.js app behind biga: the landing page, the documentation, the
-read-only session viewer, and the REST + SSE API the
-[CLI](https://github.com/biga-sh/cli) and every viewer talk to.
+The Next.js app behind biga: the landing page, the documentation and the
+read-only session viewer. Sessions come from the Go
+[API server](https://github.com/biga-sh/server), which `/api/sessions/*` is
+proxied to.
 
 See the [repository README](../../README.md) for setup, configuration and how
 the pieces fit together.
@@ -15,7 +16,7 @@ the pieces fit together.
 | `content/docs`, `src/app/docs` | The documentation: MDX pages rendered by [Fumadocs](https://fumadocs.dev), with Mermaid diagrams in fenced `mermaid` blocks. |
 | `src/app/brand`, `public/brand` | The brand page and its downloadable files. |
 | `src/app/session/[sessionId]` | The viewer. |
-| `src/app/api` | The API routes. |
+| `src/lib/session-api.ts`, `src/lib/use-session-stream.ts` | How the viewer reads the API server. |
 | `src/components/showcase`, `src/lib/showcase` | The landing page's use of the real viewer, fed from a committed snapshot instead of a server. |
 | `src/components/ui` | shadcn-style primitives, plus the vendored [keyframeui](https://keyframeui.com) components (`circuit`, `autopilot`, `exploded-ui`). Update those with the registry, not by hand. |
 

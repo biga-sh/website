@@ -4,7 +4,7 @@
 
 **Stream your saves, not your screen.**
 
-The server, viewer and website behind [biga](https://github.com/biga-sh/cli):<br>
+The website and viewer behind [biga](https://github.com/biga-sh/cli):<br>
 broadcast a folder as a live, read-only link. No accounts, nothing to install.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/biga-sh/website/ci.yml?branch=main&style=flat-square&labelColor=0b0c0e)](https://github.com/biga-sh/website/actions/workflows/ci.yml)
@@ -12,24 +12,28 @@ broadcast a folder as a live, read-only link. No accounts, nothing to install.
 
 </div>
 
-This repository is everything on the other side of the wire from the
-[`biga` CLI](https://github.com/biga-sh/cli): the API that stores sessions and
-streams them live, the read-only viewer a link opens, and the marketing site
-and documentation.
+This repository is the read-only viewer a link opens, the marketing site and
+the documentation. Sessions are stored and streamed by the Go
+[API server](https://github.com/biga-sh/server); to run everything together on
+your own machine or network, use [biga-sh/docker](https://github.com/biga-sh/docker).
 
 ## Run it locally
 
-You need Node 22+, pnpm, and a Postgres database ([Neon](https://neon.tech)
-works out of the box).
+You need Node 22+, pnpm, and the [API server](https://github.com/biga-sh/server)
+on `:8080` (it needs Go and a Postgres database).
 
 ```sh
+# in a checkout of biga-sh/server
+DATABASE_URL=postgres://… go run ./cmd/biga-server
+
+# here
 pnpm install
-cp apps/web/.env.example apps/web/.env.local   # set DATABASE_URL
-pnpm db:push                                   # create the tables
 pnpm dev                                       # http://localhost:3000
 ```
 
-Then, in any project, with the [CLI installed](https://github.com/biga-sh/cli#install):
+In development `/api/sessions/*` is proxied to `http://localhost:8080`
+(`BIGA_SERVER_URL` changes it). Then, in any project, with the
+[CLI installed](https://github.com/biga-sh/cli#install):
 
 ```sh
 biga start
@@ -42,59 +46,55 @@ opens your local copy.
 
 ```mermaid
 flowchart LR
-  cli["biga CLI<br/>watch · hash · batch"] -- "PUT · POST (gzip)" --> api
+  cli["biga CLI<br/>watch · hash · batch"] -- "PUT · POST (gzip)<br/>owner token" --> api
 
-  subgraph web["apps/web · Next.js"]
+  subgraph server["biga-sh/server · Go"]
     api["REST API"]
     sse["SSE stream"]
     api -- "in-process" --> sse
   end
 
   api --> db[("Postgres")]
-  api -. "optional" .-> redis[("Redis")]
+  api -. "optional" .-> redis[("Redis / Valkey")]
   redis -. "other instances" .-> sse
-  viewer["Viewer<br/>any browser"] -- "GET state · file" --> api
+  viewer["Viewer · this repo<br/>any browser"] -- "GET state · file" --> api
   sse -- "checkpoint events" --> viewer
 ```
 
 The CLI uploads a snapshot, then a checkpoint for every burst of saves. The
 server stores them (content-addressed, so a file saved back to an earlier state
 costs nothing) and relays each one to the viewers on that session over
-server-sent events. Redis is optional and only needed to run more than one
-instance. The full tour, with sequence diagrams and the data model, is in the
-[architecture docs](apps/web/content/docs/architecture.mdx), and the endpoints
-are in the [API reference](apps/web/content/docs/api.mdx).
+server-sent events. Only the CLI that created a session can write to it. The
+full tour is in the [architecture docs](apps/web/content/docs/architecture.mdx),
+and the endpoints are in the [API reference](apps/web/content/docs/api.mdx).
 
 ## Repository
 
 | Path | What it is |
 | --- | --- |
-| `apps/web` | The Next.js app: landing page, documentation (Fumadocs, in `content/docs`), session viewer and the REST + SSE API. |
-| `packages/server` | Session, checkpoint and file logic, and live-event delivery. |
-| `packages/db` | Drizzle schema and queries for Postgres. |
-| `packages/redis` | The optional Redis bridge: pub/sub, cache and sequence counters. |
+| `apps/web` | The Next.js app: landing page, documentation (Fumadocs, in `content/docs`) and the session viewer. |
 | `packages/stores` | The viewer's Zustand stores. |
-| `packages/types` | Zod schemas and types shared by the server and the viewer. |
+| `packages/types` | Zod schemas and types for the API the viewer reads. |
 | `packages/eslint-config`, `packages/typescript-config` | Shared tooling config. |
 | `apps/cli` | `@zenshilabs/spire`, the original Node CLI, **deprecated**. Its last release only points people at `biga`, which is now a Go binary. |
 
 ## Configuration
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `DATABASE_URL` | yes | Postgres connection string. |
-| `REDIS_URL` | no | A TCP `rediss://` URL. Enables cross-instance live events and a shared cache. |
-| `NEXT_PUBLIC_SITE_URL` | no | Public origin, for absolute metadata URLs. Defaults to `http://localhost:3000`. |
-| `CRON_SECRET` | for cleanup | Bearer token protecting `/api/cron/cleanup`. |
-| `BIGA_RETENTION_DAYS` | no | Days an ended session is kept. Defaults to 30. |
-| `BIGA_DEMO_SESSION_ID` | no | A session the cleanup never deletes. |
+| Variable | Description |
+| --- | --- |
+| `BIGA_SERVER_URL` | Where `/api/sessions/*` is proxied. Defaults to `http://localhost:8080` in development; leave unset in production when a reverse proxy routes it. |
+| `NEXT_PUBLIC_BIGA_API_URL` | Have browsers call the API server directly instead (it must list this site in `BIGA_CORS_ORIGINS`). Baked in at build time. |
+| `NEXT_PUBLIC_SITE_URL` | Public origin, for absolute metadata URLs. Defaults to `http://localhost:3000`. |
+| `BIGA_DEMO_SESSION_ID` | The session the landing page embeds. |
 
-The size limits, eager-loading thresholds and staleness window are tunable too;
-see [self-hosting](apps/web/content/docs/self-hosting.mdx). The `BIGA_` settings
-were `SPIRE_` before the rename, and the old spellings are still read.
+The server's own settings are in its [README](https://github.com/biga-sh/server#configuration).
 
-Live updates hold a connection open per viewer, so deploy on a long-running
-Node host. A purely serverless or edge deployment can't fan events out.
+## Docker
+
+`docker build -t biga-web .` builds the site as a standalone Node server
+(`NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_BIGA_API_URL` are build arguments).
+[biga-sh/docker](https://github.com/biga-sh/docker) runs it with the API
+server, Postgres and Caddy.
 
 ## Development
 

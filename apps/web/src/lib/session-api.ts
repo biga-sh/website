@@ -6,6 +6,8 @@ import type {
     SessionResponse,
 } from "@biga/types";
 
+import { apiUrl } from "./api-url";
+
 export type LoadMode = "eager" | "lazy";
 
 export type SessionState = {
@@ -59,7 +61,7 @@ function kindForStatus(status: number): ApiErrorKind {
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     let response: Response;
     try {
-        response = await fetch(url, { signal, cache: "no-store" });
+        response = await fetch(apiUrl(url), { signal, cache: "no-store" });
     } catch (error) {
         if (signal?.aborted) {
             throw error;

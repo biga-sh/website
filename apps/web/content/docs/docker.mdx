@@ -1,0 +1,159 @@
+---
+title: Docker
+description: Run the whole of biga on your own machine or network with one Compose file.
+---
+
+[biga-sh/docker](https://github.com/biga-sh/docker) runs the site and viewer,
+the API server, Postgres and Caddy together. It works on a public server, on
+an office network, or on one laptop.
+
+## Start
+
+You need Docker Engine 24+ with Compose v2 (Linux for anything real; Docker
+Desktop is fine for trying it) and about 2 GB of RAM for the first build.
+
+<Steps>
+<Step>
+
+### Get the files and configure
+
+```sh
+git clone https://github.com/biga-sh/docker.git biga && cd biga
+./scripts/setup.sh
+```
+
+`setup.sh` asks how people will reach the server, then writes `.env` with a
+generated database password and access key. It refuses to overwrite an
+existing `.env` unless you pass `--force`.
+
+</Step>
+<Step>
+
+### Start the stack
+
+```sh
+docker compose up -d --build
+docker compose ps
+```
+
+The first build takes a few minutes. Wait until every service reports
+`healthy`.
+
+</Step>
+<Step>
+
+### Broadcast to it
+
+`setup.sh` prints the exact command, for example:
+
+```sh
+BIGA_API_URL=https://biga.example.com BIGA_ACCESS_KEY=bgk_… biga start
+```
+
+Viewers only need the link the CLI prints.
+
+</Step>
+</Steps>
+
+## Modes
+
+<Tabs items={["public", "internal", "http"]}>
+<Tab value="public">
+
+A domain on the internet. Caddy gets a certificate from Let's Encrypt and
+renews it. The domain's `A` and/or `AAAA` records must point at the host, and
+ports 80 and 443 must be reachable.
+
+```sh
+./scripts/setup.sh --mode public --domain biga.example.com
+```
+
+</Tab>
+<Tab value="internal">
+
+A private network, by name or by IP. Caddy issues certificates from its own
+certificate authority, which each device trusts once.
+
+```sh
+./scripts/setup.sh --mode internal --domain biga.internal
+docker compose up -d --build
+./scripts/trust-ca.sh
+```
+
+</Tab>
+<Tab value="http">
+
+Plain HTTP, for a network you fully trust or when something in front adds TLS.
+Owner tokens and access keys travel in clear text.
+
+```sh
+./scripts/setup.sh --mode http --domain 192.168.1.20
+```
+
+</Tab>
+</Tabs>
+
+IPv4, IPv6, intranets, VPNs and existing proxies are covered in
+[Networking](/docs/networking).
+
+## What runs
+
+| Service | Role |
+| --- | --- |
+| `caddy` | TLS, HTTP/3 and routing: `/api/sessions/*` to the server, everything else to the site. The only published ports. |
+| `server` | The Go API server: sessions, uploads, live streams. Built from [biga-sh/server](https://github.com/biga-sh/server). |
+| `web` | The site and the viewer. Built from [biga-sh/website](https://github.com/biga-sh/website). |
+| `postgres` | Every session, in the `pgdata` volume, on a network with no route out. |
+
+### Secure by default
+
+- **Only a session's creator can write to it.** The CLI gets an owner token
+  when it creates a session; a link lets people watch, nothing more.
+- **Only key holders can broadcast.** `setup.sh` generates an access key; pass
+  `--no-access-key` for an open server.
+- **Only Caddy is reachable.** Postgres has no published port and no route
+  out.
+- **Every container** runs with `no-new-privileges`, Linux capabilities
+  dropped, a read-only root filesystem and rotated logs.
+- **Rate limits see real client addresses**: the server trusts only Caddy,
+  and Caddy trusts only the proxies in `BIGA_UPSTREAM_PROXIES`.
+- **Secrets stay in `.env`**, mode `600`, ignored by git.
+
+## Day to day
+
+```sh
+docker compose logs -f server                       # follow a service
+docker compose pull --ignore-buildable && docker compose up -d --build   # update
+./scripts/backup.sh                                 # dump the database to backups/
+./scripts/restore.sh backups/biga-….dump            # restore a dump
+docker compose run --rm --no-deps server gen-key    # another access key
+docker compose down                                 # stop; data stays in volumes
+```
+
+To revoke an access key, remove it from `BIGA_ACCESS_KEYS` in `.env` and run
+`docker compose up -d`. Broadcasts using it stop at their next request.
+
+Ended sessions are deleted after `BIGA_RETENTION_DAYS` (30) by the server's own
+hourly sweep. Nothing needs scheduling.
+
+## Optional files
+
+| File | Adds |
+| --- | --- |
+| `compose.ipv6.yaml` | IPv6 inside Docker, so IPv6 visitors keep their addresses. Use it whenever the host has IPv6. |
+| `compose.scale.yaml` | Several API server instances sharing live events through Valkey. |
+
+```sh
+docker compose down
+docker compose -f compose.yaml -f compose.ipv6.yaml up -d
+```
+
+Stop the stack before changing which files it uses: the networks change, and
+reattached containers lose their service names. `COMPOSE_FILE` in `.env` makes
+the choice stick.
+
+<Callout type="info" title="Building your own changes">
+Set `BIGA_SERVER_SOURCE=../server` and `BIGA_WEB_SOURCE=../website` in `.env`
+to build from local checkouts instead of GitHub, then run
+`docker compose up -d --build`.
+</Callout>

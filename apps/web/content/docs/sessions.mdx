@@ -4,7 +4,8 @@ description: How session IDs are chosen, how rejoining works, and what happens w
 ---
 
 A session is one broadcast of one directory. Its ID is the share link: there
-are no accounts, and anyone with the link can watch.
+are no accounts, and anyone with the link can watch. Only the machine that
+created the session can change it.
 
 ## Choosing the ID
 
@@ -44,6 +45,23 @@ again.
 Stopping a broadcast ends its session for viewers, who see the final state and
 a note that it ended. Starting it again reactivates the same link.
 
+## Who can write
+
+When the CLI creates a session, the server hands it an **owner token** and
+keeps only a hash of it. Every later write (uploads, heartbeats, rejoining,
+ending) must present the token, so a link lets people watch and nothing more.
+
+The token lives in `~/.biga/sessions.json`. If it is lost (the file was
+deleted, or you start the folder on another machine), the server refuses the
+rejoin, and the CLI starts a new session with a new link:
+
+```text
+▲  The server no longer accepts changes to session k3f9zq2a from this machine, so this broadcast gets a new link.
+```
+
+`--session <id>` for a session another machine owns fails instead of taking it
+over.
+
 ## When the server is unreachable
 
 The live panel switches to `reconnecting — changes are buffered`. Changes made
@@ -56,6 +74,6 @@ The CLI keeps what it needs in `~/.biga` (or `$BIGA_HOME`):
 
 | Path | What it holds |
 | --- | --- |
-| `sessions.json` | Each broadcast directory's session. This is what keeps a project's link stable across restarts. |
+| `sessions.json` | Each broadcast directory's session and its owner token. This is what keeps a project's link stable across restarts. Readable by your user only. |
 | `control/` | Stop requests from `biga stop`. |
 | `update-check.json` | The latest release version, cached for a day. |

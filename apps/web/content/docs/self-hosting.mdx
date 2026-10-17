@@ -3,61 +3,76 @@ title: Self-hosting
 description: Run the biga server on your own infrastructure.
 ---
 
-The server is one Next.js app on Postgres. Redis is optional, and only needed
-to fan live events out across several instances. It lives in
-[biga-sh/website](https://github.com/biga-sh/website).
+biga has two server-side parts:
 
-## Environment
+- **The API server**, [biga-sh/server](https://github.com/biga-sh/server): one
+  Go binary on Postgres. It stores sessions and streams every save to viewers.
+  Redis or Valkey is optional, for running several instances.
+- **The site and viewer**, [biga-sh/website](https://github.com/biga-sh/website):
+  a Next.js app that renders sessions. It holds no data.
 
-| Variable | Required | Description |
+Both need to answer on one origin, with `/api/sessions/*` going to the API
+server, so the CLI and the viewer share one URL.
+
+## Choose a setup
+
+| Setup | When |
+| --- | --- |
+| [Docker](/docs/docker) | The easy path. Everything, with TLS, on one machine. |
+| The server binary or image, behind your own proxy | You already run a reverse proxy and Postgres. |
+| The site on Vercel, the server elsewhere | You want the site on a CDN. Point the site at the server with `BIGA_SERVER_URL` (proxied) or `NEXT_PUBLIC_BIGA_API_URL` (direct, with `BIGA_CORS_ORIGINS` on the server). |
+
+## Run the server on its own
+
+```sh
+docker run -p 8080:8080 \
+  -e DATABASE_URL='postgres://biga:…@db:5432/biga' \
+  -e BIGA_PUBLIC_URL=https://biga.example.com \
+  -e BIGA_TRUSTED_PROXIES=private \
+  ghcr.io/biga-sh/server:1
+```
+
+Or build it with Go 1.26+: `go build ./cmd/biga-server`. It applies its
+database migrations on start, answers `GET /healthz` (process up) and
+`GET /readyz` (Postgres and Redis reachable), and shuts down gracefully on
+`SIGTERM`.
+
+Then route `/api/sessions/*` to it and everything else to the site. Your proxy
+must not buffer server-sent events; see the nginx example under
+[Networking](/docs/networking#behind-a-proxy-you-already-run).
+
+## Configuration
+
+The settings you are most likely to need:
+
+| Variable | Default | Description |
 | --- | --- | --- |
-| `DATABASE_URL` | yes | A Postgres connection string. A Neon database works out of the box. |
-| `REDIS_URL` | no | A TCP `rediss://` URL. Enables cross-instance live events and a shared cache. Without it the server runs single-instance with in-process pub/sub. |
-| `NEXT_PUBLIC_SITE_URL` | no | The site's public origin, used for absolute metadata URLs. Defaults to `http://localhost:3000`. |
-| `CRON_SECRET` | for cleanup | A bearer token protecting the retention endpoint. |
-| `BIGA_RETENTION_DAYS` | no | Days an ended session is kept before deletion. Defaults to 30. |
-| `BIGA_DEMO_SESSION_ID` | no | A session the retention sweep never deletes, and the one the landing page embeds. |
+| `DATABASE_URL` | required | Postgres connection string (13 or newer). |
+| `BIGA_PUBLIC_URL` | unset | The origin viewers open. Returned to the CLI as the share link. |
+| `BIGA_ACCESS_KEYS` | unset | When set, only holders of one of these keys can broadcast. Generate keys with `biga-server gen-key`. |
+| `BIGA_TRUSTED_PROXIES` | unset | Proxies whose `X-Forwarded-For` is believed: IPs, CIDRs, `loopback` or `private`. Set it behind a proxy, or every client looks like the proxy. |
+| `BIGA_LISTEN` | `:8080` | Addresses to listen on, IPv4 or IPv6, or `unix:/path`. |
+| `BIGA_CORS_ORIGINS` | unset | Browser origins allowed to read the API cross-origin. |
+| `BIGA_RETENTION_DAYS` | `30` | Days an ended session is kept. The server sweeps hourly. |
+| `REDIS_URL` | unset | Redis or Valkey, to share live events and rate limits across instances. |
 
-<Callout type="info" title="Renamed from SPIRE_">
-These were `SPIRE_*` before the rename to biga. The old spellings are still
-read when the new one is unset, so an existing deployment keeps working.
-</Callout>
+Every option, including body limits, rate limits, stream caps and TLS, is in
+the [server README](https://github.com/biga-sh/server#configuration). Secrets
+can be read from files by adding `_FILE` to the name.
 
-<Callout type="info" title="Redis must be TCP">
-Live updates hold a long-lived subscription open, so the Redis URL has to be a
-TCP `rediss://` one (Upstash's TCP endpoint, for example). An HTTP REST API
-cannot do it.
-</Callout>
+## The site
 
-## Tuning
-
-All optional, and read by the server at startup.
-
-| Variable | Default | Effect |
-| --- | --- | --- |
-| `BIGA_EAGER_MAX_BYTES` | 1.5 MiB | A session under this and under the file limit ships every file's content up front. |
-| `BIGA_EAGER_MAX_FILES` | 400 | See above. Larger sessions load content per file. |
-| `BIGA_SESSION_STALE_MS` | 45000 | How long a broadcast may go silent before it is marked ended. |
-| `BIGA_MAX_SNAPSHOT_BYTES` | 32 MiB | Largest snapshot body. |
-| `BIGA_MAX_CHECKPOINT_BYTES` | 8 MiB | Largest checkpoint body. |
-| `BIGA_MAX_SESSION_BYTES` | 16 KiB | Largest session create or update body. |
+| Variable | Description |
+| --- | --- |
+| `BIGA_SERVER_URL` | Where the site proxies `/api/sessions/*`. Defaults to `http://localhost:8080` in development; unset in production when a reverse proxy already routes it. |
+| `NEXT_PUBLIC_BIGA_API_URL` | Have browsers call the server directly instead. Baked in at build time. |
+| `NEXT_PUBLIC_SITE_URL` | The public origin, for absolute metadata URLs. |
+| `BIGA_DEMO_SESSION_ID` | The session the landing page embeds. Give the server the same value so retention keeps it. |
 
 ## Point the CLI at it
 
 ```sh
-BIGA_API_URL=https://your-instance.example.com biga start
+BIGA_API_URL=https://biga.example.com biga start
 ```
 
-## Retention
-
-Ended sessions are kept for `BIGA_RETENTION_DAYS` and then deleted, along with
-all their data. Sessions that stopped uncleanly (the CLI died) are marked ended
-after 24 hours of silence.
-
-The sweep runs when `/api/cron/cleanup` is called. On Vercel that is wired
-through `vercel.json`; elsewhere call it on a schedule:
-
-```sh
-curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://your-instance.example.com/api/cron/cleanup
-```
+Add `BIGA_ACCESS_KEY=<key>` if the server requires one.

@@ -33,6 +33,19 @@ export const SessionResponseSchema = z.object({
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;
 
 /**
+ * The answer to `PUT /api/sessions/:id`. `token` is the session's owner
+ * credential: present only on the response that created the session (the
+ * server keeps just a hash), and required as `Authorization: Bearer` on every
+ * later write. `shareUrl` is the viewer link when the server knows its public
+ * address. The viewer never sees either; the CLI is the only writer.
+ */
+export const SessionGrantSchema = SessionResponseSchema.extend({
+    token: z.string().optional(),
+    shareUrl: z.string().url().optional(),
+});
+export type SessionGrant = z.infer<typeof SessionGrantSchema>;
+
+/**
  * A single current-head file entry as reported by the manifest endpoint.
  * Content is not included — only the identity a client needs to decide whether
  * its local copy differs from the server's.

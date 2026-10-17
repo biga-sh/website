@@ -15,7 +15,7 @@ flowchart TB
   folder["<b>Your folder</b><br/>.gitignore · .bigaignore"] --> cli["<b>biga CLI</b><br/>watch · hash · batch"]
   cli -- "PUT · POST (gzip)" --> api
 
-  subgraph host["Server · Next.js"]
+  subgraph host["Server · Go"]
     api["<b>REST API</b><br/>uploads and reads"]
     sse["<b>SSE stream</b><br/>live events"]
   end
@@ -29,15 +29,18 @@ flowchart TB
 ```
 
 - **The CLI** is one Go binary. It is the only thing that ever reads your files.
-- **The server** is a Next.js app. It accepts uploads over REST and delivers
-  live events over server-sent events. See the [HTTP API](/docs/api).
+- **The server** is one Go binary. It accepts uploads over REST and delivers
+  live events over server-sent events. See the [HTTP API](/docs/api). The
+  site and viewer are a separate Next.js app that holds no data.
 - **Postgres** is the source of truth for every session. **Redis** is optional
   and only needed to run more than one server instance.
 - **The viewer** is the page a link opens. It loads a session's state once and
   then follows a stream.
 
-There are no accounts anywhere. The session ID is the credential, which is why
-the CLI is careful about [what it shares](/docs/what-gets-shared).
+There are no accounts anywhere. The session ID is the credential to watch,
+which is why the CLI is careful about [what it shares](/docs/what-gets-shared).
+Writing needs more: the owner token the server issued when the session was
+created, and an access key if the server requires one.
 
 ## What the CLI does between a save and an upload
 
@@ -170,8 +173,8 @@ delivered twice. Without `REDIS_URL` everything stays in the process.
 
 <Callout type="warn" title="Needs a long-running host">
 Holding a stream open for every viewer means the server has to be a
-long-running Node process. A purely serverless or edge deployment can't
-fan live events out.
+long-running process. A purely serverless or edge deployment can't fan live
+events out.
 </Callout>
 
 ## The data model
@@ -189,6 +192,7 @@ erDiagram
   sessions {
     text id PK
     text status "active or ended"
+    bytea owner_token_hash "SHA-256"
   }
   snapshots {
     jsonb tree "metadata only"
@@ -217,8 +221,9 @@ erDiagram
   bytes, so the encoding is invisible to callers.
 - **Binary files are recorded, not stored.** They get a row with `binary` set
   and no bytes.
-- **A checkpoint and its changes are written together.** The row and its
-  changes go in one batch, so a viewer never sees one without the other.
+- **An upload is one transaction.** The checkpoint, its changes, new blobs and
+  the moved head commit together with the session row locked, so writers to a
+  session take turns and a viewer never sees half an upload.
 - **A session cascades.** Deleting a session deletes everything under it, which
   is what the retention sweep relies on.
 
@@ -228,7 +233,7 @@ When a viewer opens a small session the server sends every current file's
 content with the state, so files open instantly. A session over roughly
 1.5 MB or 400 files is served lazily instead: the state carries the tree, and
 content is fetched per file, by hash, as it is opened. Both thresholds are
-[configurable](/docs/self-hosting#tuning).
+[configurable](https://github.com/biga-sh/server#limits-and-tuning).
 
 ## Properties worth relying on
 
@@ -236,5 +241,5 @@ content is fetched per file, by hash, as it is opened. Both thresholds are
 | --- | --- |
 | A crash is repaired by running the same command | Local files are the source of truth, and rejoin diffs against the server. |
 | Unchanged files are never re-sent | Uploads are keyed by SHA-256, and a file whose hash hasn't changed isn't uploaded again. |
-| The viewer never writes | It has no editing interface and only calls read endpoints; the write endpoints are the CLI's. |
+| Only the broadcaster writes | Every write needs the session's owner token, which only the creating CLI holds. |
 | History is complete | Checkpoints are append-only, and content is immutable by hash. |

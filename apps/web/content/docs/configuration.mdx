@@ -21,11 +21,18 @@ $env:BIGA_API_URL = "https://biga.example.com"; biga start
 Release builds can bake a hosted server in with the `DefaultAPIURL` link-time
 setting, in which case this variable is only needed to override it.
 
+A self-hosted server may require an access key. Its operator gives you one:
+
+```sh
+BIGA_API_URL=https://biga.example.com BIGA_ACCESS_KEY=bgk_… biga start
+```
+
 ## Environment variables
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `BIGA_API_URL` | `http://localhost:3000` | Server base URL. `--api-url` overrides it. |
+| `BIGA_ACCESS_KEY` | unset | Sent to servers that only accept broadcasts from key holders. Ask the server's operator for one. |
 | `BIGA_HOME` | `~/.biga` | Where local state is kept. |
 | `BIGA_IDLE_MS` | `120` | Quiet time after the last change before a checkpoint is sent. |
 | `BIGA_MAX_WAIT_MS` | `1000` | The longest a burst of changes can delay a checkpoint. |

@@ -7,10 +7,7 @@
     "dev:web": "turbo run dev --filter=web",
     "lint": "turbo run lint --ui=stream",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types",
-    "db:generate": "pnpm --filter @biga/db db:generate",
-    "db:migrate": "pnpm --filter @biga/db db:migrate",
-    "db:push": "pnpm --filter @biga/db db:push"
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

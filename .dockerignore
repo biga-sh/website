@@ -1,0 +1,15 @@
+# Never send local secrets or build output to the image build.
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.next
+**/.turbo
+**/.vercel
+**/coverage
+**/dist
+.git
+.agents
+.claude
+apps/cli
+*.log

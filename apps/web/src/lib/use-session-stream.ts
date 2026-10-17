@@ -8,6 +8,7 @@ import { useHistoryStore } from "@biga/stores/history-store";
 import { useSessionStore } from "@biga/stores/session-store";
 import { useViewerPrefsStore } from "@biga/stores/viewer-prefs-store";
 
+import { apiUrl } from "./api-url";
 import { contentCache } from "./content-cache";
 import { firstViewableChange, preferredFilePath } from "./reconstruct";
 import {
@@ -250,7 +251,7 @@ export function useSessionStream(sessionId: string): StreamResult {
 
         const connect = () => {
             eventSource?.close();
-            const source = new EventSource(`/api/sessions/${sessionId}/stream`);
+            const source = new EventSource(apiUrl(`/api/sessions/${sessionId}/stream`));
             eventSource = source;
 
             const forward = (raw: MessageEvent<string>) => {

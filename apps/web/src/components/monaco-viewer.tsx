@@ -6,6 +6,7 @@ import { useThemeStore } from "@biga/stores/theme-store";
 import type * as Monaco from "monaco-editor";
 import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { Highlighter } from "shiki";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { languageForPath } from "@/lib/languages";
@@ -33,6 +34,38 @@ export const MONACO_OPTIONS = {
  * calls to `shikiToMonaco` would add duplicate listeners.
  */
 let shikiRegistered = false;
+
+/**
+ * Monaco's built-in themes, shown until Shiki's grammars and themes have
+ * loaded. They are not Shiki theme ids, so they must never reach Shiki.
+ */
+const FALLBACK_LIGHT_THEME = "vs";
+const FALLBACK_DARK_THEME = "vs-dark";
+
+/**
+ * Registers Shiki with Monaco and keeps `monaco.editor.setTheme` total.
+ *
+ * `shikiToMonaco` replaces `setTheme` (and `create`) with versions that pass
+ * the name to Shiki, which throws `ShikiError: Theme "x" not found` for any
+ * theme it did not load. An editor that mounted before Shiki was ready still
+ * has a built-in theme name queued, so a `setTheme` call landing after the
+ * replacement threw from inside a React effect and unmounted the whole viewer.
+ * Names Shiki does not know are routed to Monaco's own `setTheme` instead.
+ */
+function registerShiki(highlighter: Highlighter, monaco: typeof Monaco) {
+  const editor = monaco.editor as { setTheme: (name: string) => void };
+  const monacoSetTheme = editor.setTheme.bind(monaco.editor);
+  shikiToMonaco(highlighter, monaco);
+  const shikiSetTheme = editor.setTheme;
+  const shikiThemes = new Set(highlighter.getLoadedThemes());
+  editor.setTheme = (name) => {
+    if (shikiThemes.has(name)) {
+      shikiSetTheme(name);
+    } else {
+      monacoSetTheme(name);
+    }
+  };
+}
 
 /**
  * Monaco measures glyph widths once, when the editor is created. On a cold load
@@ -101,7 +134,7 @@ export function useShikiMonaco() {
         for (const lang of highlighter.getLoadedLanguages()) {
           monaco.languages.register({ id: lang });
         }
-        shikiToMonaco(highlighter, monaco);
+        registerShiki(highlighter, monaco);
         shikiRegistered = true;
       }
       setReady(true);
@@ -121,7 +154,7 @@ export function useEditorTheme() {
   const editorTheme = useThemeStore((state) => state.editorTheme);
   const { resolvedTheme } = useTheme();
   const shikiTheme = resolveEditorTheme(editorTheme, resolvedTheme);
-  const fallback = resolvedTheme === "dark" ? "vs-dark" : "light";
+  const fallback = resolvedTheme === "dark" ? FALLBACK_DARK_THEME : FALLBACK_LIGHT_THEME;
   return { shikiTheme, fallback };
 }
 

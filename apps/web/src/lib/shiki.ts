@@ -27,12 +27,18 @@ export function getHighlighter(): Promise<Highlighter> {
     return highlighterPromise;
 }
 
-/** Resolve the active Shiki theme id, expanding "auto" via the app's mode. */
+const KNOWN_THEMES = new Set(EDITOR_THEMES.map((theme) => theme.id));
+
+/**
+ * Resolve the active Shiki theme id, expanding "auto" via the app's mode. An id
+ * that Shiki no longer ships (a stale value in localStorage) is treated as
+ * "auto" rather than handed to Monaco, where it would throw.
+ */
 export function resolveEditorTheme(
     editorTheme: string,
     resolvedMode: string | undefined
 ): string {
-    if (editorTheme !== "auto") {
+    if (editorTheme !== "auto" && KNOWN_THEMES.has(editorTheme)) {
         return editorTheme;
     }
     return resolvedMode === "dark" ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME;

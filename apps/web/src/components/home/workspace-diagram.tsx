@@ -1,9 +1,9 @@
 "use client";
 
-import { PauseIcon, PlayIcon } from "lucide-react";
 import { useState } from "react";
 
 import { FileTypeIcon } from "@/components/file-icon";
+import { PauseButton } from "@/components/home/pause-button";
 import { Circuit } from "@/components/ui/circuit";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
@@ -72,15 +72,7 @@ export function WorkspaceDiagram() {
         <Link id="link-web" path="/session/p7d2mx4c" />
       </Circuit>
 
-      <button
-        type="button"
-        onClick={() => setPaused((value) => !value)}
-        aria-pressed={paused}
-        className="border-rail bg-background text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 font-body ml-auto flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px]"
-      >
-        {paused ? <PlayIcon className="size-3" strokeWidth={2} /> : <PauseIcon className="size-3" strokeWidth={2} />}
-        {paused ? "Play" : "Pause"}
-      </button>
+      <PauseButton paused={paused} onToggle={() => setPaused((value) => !value)} className="ml-auto" />
     </div>
   );
 }

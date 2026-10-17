@@ -1,10 +1,10 @@
 "use client";
 
-import { PauseIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { PauseButton } from "@/components/home/pause-button";
 import { translateAlong } from "@/components/iso/iso-kit.mjs";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 import { KEY_TRAVEL, needleAt, P, RAM_REST, stackTop } from "./art.mjs";
 import { createModel, DIAL_MAX_MS, save, STACK_MAX, step } from "./model.mjs";
@@ -255,28 +255,24 @@ export function PressLive({ svg, initial }: { svg: string; initial: number }) {
       </div>
       <span ref={announceRef} aria-live="polite" className="sr-only" />
       <div className="press-controls">
-        <button type="button" className={cn(BUTTON, "press-primary")} onClick={() => api.current?.press(true)}>
+        <Button type="button" className="rounded-full" onClick={() => api.current?.press(true)}>
           Save an edit
-        </button>
-        <button type="button" className={BUTTON} onClick={() => api.current?.press(false)}>
+        </Button>
+        <Button type="button" variant="outline" className="rounded-full" onClick={() => api.current?.press(false)}>
           Save, no changes
-        </button>
-        <button
-          type="button"
-          aria-pressed={paused}
-          className={cn(BUTTON, "ml-auto gap-1.5 px-3 text-xs")}
-          onClick={() => {
+        </Button>
+        <PauseButton
+          paused={paused}
+          pauseLabel="Pause tour"
+          playLabel="Play tour"
+          className="ml-auto"
+          onToggle={() => {
             api.current?.hold(!paused);
             setPaused(!paused);
           }}
-        >
-          {paused ? <PlayIcon className="size-3" strokeWidth={2} /> : <PauseIcon className="size-3" strokeWidth={2} />}
-          {paused ? "Play tour" : "Pause tour"}
-        </button>
+        />
       </div>
     </>
   );
 }
 
-const BUTTON =
-  "font-body border-rail bg-background text-foreground hover:bg-muted focus-visible:ring-ring/50 inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium outline-none transition-[background-color,scale] duration-150 focus-visible:ring-[3px] active:scale-[0.96]";

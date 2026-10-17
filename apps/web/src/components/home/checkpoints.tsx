@@ -15,10 +15,10 @@ export function Checkpoints() {
     <Section id="checkpoints">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-14">
         <div className="flex flex-col gap-4 lg:pt-6">
-          <span className="text-brand-text font-pixel flex items-center gap-2.5 text-xs leading-none tracking-[0.08em] uppercase">
+          <Typography variant="label" tone="brand" className="flex items-center gap-2.5">
             <span aria-hidden className="bg-brand-mark size-2 shrink-0 rotate-45" />
             02 / Checkpoints
-          </span>
+          </Typography>
           <Typography variant="h2">Every save becomes a checkpoint.</Typography>
           <Typography variant="lead" tone="muted">
             biga hashes each file it reads. A burst of saves goes out as one checkpoint, and a save that changes

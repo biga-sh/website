@@ -41,6 +41,7 @@ function LiveStatus({ status }: { status: StreamStatus }) {
 
     return (
         <span
+            data-slot="live-status"
             className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
             title={fullDetail ?? undefined}
         >

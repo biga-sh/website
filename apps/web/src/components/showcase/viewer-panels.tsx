@@ -81,7 +81,21 @@ export function PanelTimeline() {
   );
 }
 
-export function PanelCode({ save }: { save?: { from: string; to: string } }) {
+export function PanelCode({
+  save,
+  firstLine,
+  lastLine,
+  wrap,
+  tabSize,
+}: {
+  /** An edit landing on the demo line: `from` becomes `to`, drawn under the highlighter, and targetable as `target`. */
+  save?: { from: string; to: string; target?: string };
+  /** Override where the pane starts and stops, for a short crop of the file. */
+  firstLine?: number;
+  lastLine?: number;
+  wrap?: boolean;
+  tabSize?: 2 | 4;
+}) {
   const fixture = useShowcase();
   const tabs = useEditorStore((state) => state.tabs);
   const active = useEditorStore((state) => state.activeFilePath);
@@ -94,7 +108,7 @@ export function PanelCode({ save }: { save?: { from: string; to: string } }) {
 
   const path = file.path;
   const shownTabs = tabs.length ? tabs : [path];
-  const replace = save && path === DEMO_FILE ? { line: DEMO_LINE, ...save } : undefined;
+  const replace = save && path === DEMO_FILE ? { line: DEMO_LINE, mark: true, ...save } : undefined;
 
   return (
     <div className="bg-background flex size-full min-w-0 flex-col">
@@ -108,7 +122,14 @@ export function PanelCode({ save }: { save?: { from: string; to: string } }) {
         </span>
       </div>
       <div className="min-h-0 flex-1">
-        <StaticCode file={file} firstLine={FIRST_LINE[path] ?? 1} replace={replace} />
+        <StaticCode
+          file={file}
+          firstLine={firstLine ?? FIRST_LINE[path] ?? 1}
+          lastLine={lastLine}
+          replace={replace}
+          wrap={wrap}
+          tabSize={tabSize}
+        />
       </div>
     </div>
   );

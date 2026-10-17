@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 /*
@@ -48,13 +49,13 @@ export function Section({
 }: ComponentProps<"section"> & {
   columnClassName?: string;
   bleed?: boolean;
-  /** A dark, glowing chapter in either theme. See `.biga-stage` in globals.css. */
+  /** A louder chapter: its own surface, dot grid and green glow. Follows the theme. See `.biga-stage` in globals.css. */
   stage?: boolean;
 }) {
   return (
     <section
       id={id}
-      className={cn("border-rail border-b", GUTTER, stage && "dark biga-stage", className)}
+      className={cn("border-rail border-b", GUTTER, stage && "biga-stage", className)}
       {...props}
     >
       <div
@@ -98,10 +99,10 @@ export function SectionHeader({
     <div className={cn("flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between", className)}>
       <div className="flex max-w-2xl flex-col gap-4">
         {eyebrow ? (
-          <span className="text-brand-text font-pixel flex items-center gap-2.5 text-xs leading-none tracking-[0.08em] uppercase">
+          <Typography variant="label" tone="brand" className="flex items-center gap-2.5">
             <span aria-hidden className="bg-brand-mark size-2 shrink-0 rotate-45" />
             {eyebrow}
-          </span>
+          </Typography>
         ) : null}
         {title}
         {lead}

@@ -6,10 +6,8 @@ import { StartSteps } from "@/components/home/start-steps";
 import { GitHubGlyph } from "@/components/landing/primitives";
 import { Section } from "@/components/site/frame";
 import { CLI_REPO_URL } from "@/components/site/links";
+import { Button } from "@/components/ui/button";
 import { Mark, Typography } from "@/components/ui/typography";
-
-const BUTTON =
-  "font-body focus-visible:ring-ring/50 inline-flex h-11 items-center gap-2 px-4 text-sm font-medium outline-none transition-[background-color,scale] duration-150 focus-visible:ring-[3px] active:scale-[0.96]";
 
 export function Install({ siteUrl }: { siteUrl: string }) {
   const { hostname } = new URL(siteUrl);
@@ -28,15 +26,19 @@ export function Install({ siteUrl }: { siteUrl: string }) {
           </Typography>
 
           <div className="mt-2 flex flex-col gap-3">
-            <div className="border-rail inline-flex w-fit overflow-hidden rounded-xl border">
-              <a href={CLI_REPO_URL} target="_blank" rel="noreferrer" className={`${BUTTON} bg-foreground text-background hover:bg-foreground/90`}>
-                <GitHubGlyph className="size-4" />
-                Star on GitHub
-              </a>
-              <Link href="/docs" className={`${BUTTON} border-rail bg-background hover:bg-muted border-l`}>
-                <BookOpenIcon className="size-4" strokeWidth={1.75} />
-                Read the docs
-              </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button asChild size="lg" className="rounded-full">
+                <a href={CLI_REPO_URL} target="_blank" rel="noreferrer">
+                  <GitHubGlyph className="size-4" />
+                  Star on GitHub
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="rounded-full">
+                <Link href="/docs">
+                  <BookOpenIcon strokeWidth={1.75} />
+                  Read the docs
+                </Link>
+              </Button>
             </div>
             <Annotation direction="up" className="ml-2">
               MIT licensed. Issues and PRs welcome

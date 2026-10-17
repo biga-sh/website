@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import { FeatureTimeline } from "@/components/home/features-live";
 import { WorkspaceDiagram } from "@/components/home/workspace-diagram";
 import { INSET, Section, SectionHeader } from "@/components/site/frame";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
@@ -78,12 +80,12 @@ function Shortcuts() {
       ].map((keys) => (
         <span key={keys.join("")} className="flex items-center gap-1">
           {keys.map((key) => (
-            <kbd
+            <Kbd
               key={key}
-              className="border-rail bg-muted font-body grid h-8 min-w-8 place-items-center rounded-md border border-b-2 px-2 text-sm font-medium"
+              className="border-rail text-foreground font-body h-8 min-w-8 rounded-md border-b-2 px-2 text-sm"
             >
               {key}
-            </kbd>
+            </Kbd>
           ))}
         </span>
       ))}
@@ -103,13 +105,12 @@ function SelfHost() {
           <span className="text-muted-foreground">REDIS_URL=     # optional</span>
         </code>
       </pre>
-      <Link
-        href="/docs#self-hosting"
-        className="font-body group text-foreground focus-visible:ring-ring/50 inline-flex w-fit items-center gap-1 rounded-sm text-sm font-medium underline decoration-[var(--rail)] underline-offset-4 outline-none transition-colors hover:decoration-current focus-visible:ring-[3px]"
-      >
-        Self-hosting guide
-        <ArrowUpRightIcon className="size-3.5 transition-transform duration-150 group-hover:translate-x-px group-hover:-translate-y-px" strokeWidth={1.75} />
-      </Link>
+      <Button asChild variant="outline" size="sm" className="w-fit rounded-full">
+        <Link href="/docs#self-hosting">
+          Self-hosting guide
+          <ArrowUpRightIcon strokeWidth={1.75} />
+        </Link>
+      </Button>
     </div>
   );
 }

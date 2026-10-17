@@ -3,6 +3,7 @@
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,16 +21,15 @@ export function CopyValue({ value, label, className }: { value: string; label?: 
   }, [copied]);
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="xs"
       aria-label={`Copy ${label ?? value}`}
       onClick={() => {
         void navigator.clipboard?.writeText(value).then(() => setCopied(true));
       }}
-      className={cn(
-        "group/copy hover:bg-foreground/8 focus-visible:ring-ring/50 inline-flex min-h-8 items-center gap-1.5 rounded-md px-1.5 py-1 font-mono text-xs outline-none transition-colors focus-visible:ring-[3px]",
-        className
-      )}
+      className={cn("group/copy min-h-8 gap-1.5 px-1.5 py-1 font-mono font-normal shadow-none", className)}
     >
       <span translate="no">{value}</span>
       {copied ? (
@@ -40,6 +40,6 @@ export function CopyValue({ value, label, className }: { value: string; label?: 
       <span role="status" className="sr-only">
         {copied ? "Copied" : ""}
       </span>
-    </button>
+    </Button>
   );
 }

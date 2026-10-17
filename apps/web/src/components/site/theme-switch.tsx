@@ -2,9 +2,10 @@
 
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { type ChangeEvent, useId, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 const OPTIONS = [
@@ -59,9 +60,10 @@ function syncFrames(resolved: string) {
 }
 
 /**
- * Light, dark or follow the system, as three radios in one pill. Native
- * radios give arrow-key movement and a single tab stop for free. The theme
- * is unknown until hydration, so nothing is checked on the server.
+ * Light, dark or follow the system, as a segmented control (a shadcn
+ * `ToggleGroup`, so arrow keys move between the options and there is one tab
+ * stop). The theme is unknown until hydration, so nothing is selected on the
+ * server.
  *
  * Where the View Transitions API exists, the new theme wipes in as a circle
  * from the chosen segment; reduced motion swaps instantly.
@@ -69,10 +71,8 @@ function syncFrames(resolved: string) {
 export function ThemeSwitch({ className }: { className?: string }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
-  const name = useId();
 
-  function onChange(event: ChangeEvent<HTMLInputElement>) {
-    const next = event.target.value;
+  function choose(next: string, segment: HTMLElement) {
     const doc = document as ViewTransitionDocument;
     const nextResolved =
       next === "system"
@@ -91,9 +91,9 @@ export function ThemeSwitch({ className }: { className?: string }) {
       return;
     }
 
-    const box = event.target.parentElement?.getBoundingClientRect();
-    const x = box ? box.left + box.width / 2 : window.innerWidth;
-    const y = box ? box.top + box.height / 2 : 0;
+    const box = segment.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
     const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
 
     const transition = doc.startViewTransition(() => {
@@ -110,34 +110,26 @@ export function ThemeSwitch({ className }: { className?: string }) {
   }
 
   return (
-    <fieldset
-      className={cn(
-        "border-rail bg-background flex h-9 items-center gap-0.5 rounded-full border p-0.5",
-        className
-      )}
+    <ToggleGroup
+      type="single"
+      // Controlled by next-themes. The segment's own click does the work, so it
+      // knows where the wipe starts, and pressing the active one stays a no-op.
+      value={mounted && theme ? theme : ""}
+      onValueChange={() => {}}
+      aria-label="Theme"
+      className={cn("border-rail bg-background h-9 gap-0.5 rounded-full border p-0.5", className)}
     >
-      <legend className="sr-only">Theme</legend>
       {OPTIONS.map(({ value, label, Icon }) => (
-        <label
+        <ToggleGroupItem
           key={value}
-          className={cn(
-            "relative grid size-7 cursor-pointer place-items-center rounded-full transition-colors duration-150",
-            "text-muted-foreground hover:text-foreground has-checked:bg-muted has-checked:text-foreground",
-            "has-focus-visible:ring-ring/50 has-focus-visible:ring-[3px]"
-          )}
+          value={value}
+          aria-label={label}
+          onClick={(event) => choose(value, event.currentTarget)}
+          className="size-7 rounded-full p-0 data-[state=on]:bg-muted data-[state=on]:shadow-none"
         >
-          <input
-            type="radio"
-            name={name}
-            value={value}
-            checked={mounted ? theme === value : false}
-            onChange={onChange}
-            className="sr-only"
-          />
-          <Icon aria-hidden className="size-3.5" strokeWidth={1.75} />
-          <span className="sr-only">{label}</span>
-        </label>
+          <Icon aria-hidden strokeWidth={1.75} />
+        </ToggleGroupItem>
       ))}
-    </fieldset>
+    </ToggleGroup>
   );
 }

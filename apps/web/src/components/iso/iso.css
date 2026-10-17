@@ -109,8 +109,6 @@
 .press [data-part="lamp"][data-on] .iso-top { fill: var(--brand); }
 .press [data-part="ticket"] .iso-solid[data-lit] > .iso-edge { stroke-width: 0.9px; }
 .press-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.press-primary { background: var(--foreground); color: var(--background); border-color: transparent; }
-.press-primary:hover { background: color-mix(in oklab, var(--foreground) 88%, var(--background)); }
 
 @media (max-width: 640px) {
   /* Small parts read better a little larger; the plate clips the overflow. */

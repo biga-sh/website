@@ -5,6 +5,7 @@ import { Annotation } from "@/components/home/annotation";
 import { HeroCircuit, HeroMotion, OnAirPill } from "@/components/home/hero-live";
 import { InstallCommand } from "@/components/home/install-command";
 import { Section } from "@/components/site/frame";
+import { Button } from "@/components/ui/button";
 import { Mark, Typography } from "@/components/ui/typography";
 
 export function Hero({ siteUrl }: { siteUrl: string }) {
@@ -31,18 +32,12 @@ export function Hero({ siteUrl }: { siteUrl: string }) {
               <InstallCommand />
             </div>
 
-            <Link
-              href="#how"
-              className="group font-body text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 mt-5 -ml-1 inline-flex h-10 items-center gap-2 rounded-full px-1 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px]"
-            >
-              <span className="border-rail grid size-7 place-items-center rounded-full border">
-                <ArrowDownIcon
-                  className="size-3.5 transition-transform duration-150 ease-out group-hover:translate-y-0.5"
-                  strokeWidth={1.75}
-                />
-              </span>
-              Watch it run
-            </Link>
+            <Button asChild variant="outline" size="lg" className="mt-6 rounded-full">
+              <Link href="#how">
+                <ArrowDownIcon strokeWidth={1.75} />
+                Watch it run
+              </Link>
+            </Button>
           </div>
 
           <div className="biga-rise min-w-0 [animation-delay:120ms]">

@@ -1083,7 +1083,20 @@ export interface AutopilotProps extends Omit<React.HTMLAttributes<HTMLDivElement
   onChapterChange?: (index: number) => void;
   /** Classes for the stage, the box the cursors move in. */
   stageClassName?: string;
+  /**
+   * Draw the chapters yourself, above the stage, in place of `chapterStrip`.
+   * Gets the playing chapter, its progress (0 → 1), a way to jump to a chapter
+   * and the play/pause control's state.
+   */
+  renderChapters?: (api: AutopilotChaptersApi) => React.ReactNode;
 }
+
+export type AutopilotChaptersApi = {
+  chapter: number;
+  progress: MotionValue<number>;
+  seek: (index: number) => void;
+  control: { state: "pause" | "play" | "resume"; toggle: () => void };
+};
 
 /**
  * A cursor that uses your UI on its own: it moves, clicks, types and drags
@@ -1099,6 +1112,7 @@ export function Autopilot({
   park = "bottom-right",
   onChapterChange,
   stageClassName,
+  renderChapters,
   className,
   ...props
 }: AutopilotProps) {
@@ -1218,6 +1232,7 @@ export function Autopilot({
 
   return (
     <div {...props} className={cn("relative", className)}>
+      {renderChapters?.({ chapter, progress: pilot.progress, seek, control: { state: control, toggle: onControl } })}
       <div className="relative">
         <div
           ref={stageRef}
@@ -1269,7 +1284,7 @@ export function Autopilot({
             })}
           </div>
         </div>
-        {!chapterStrip && (
+        {!chapterStrip && !renderChapters && (
           <Control
             state={control}
             onClick={onControl}

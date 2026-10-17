@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { CopyGlyph } from "@/components/copy-glyph";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 export const INSTALL = {
@@ -71,18 +73,71 @@ export function CommandLine({ command, className }: { command: string; className
           {command}
         </code>
       </div>
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="icon"
         onClick={copy}
-        className="hover:bg-terminal-foreground/15 focus-visible:ring-brand-mark/50 bg-terminal-foreground/10 grid size-9 shrink-0 place-items-center rounded-full outline-none transition-colors focus-visible:ring-[3px] active:scale-[0.96]"
+        className="bg-terminal-foreground/10 text-terminal-foreground hover:bg-terminal-foreground/15 focus-visible:ring-brand-mark/50 size-9 shrink-0 rounded-full shadow-none"
       >
         <CopyGlyph copied={copied} checkClassName="text-brand-mark" />
         <span className="sr-only">{copied ? "Copied" : "Copy command"}</span>
-      </button>
+      </Button>
       <span aria-live="polite" className="sr-only">
         {copied ? "Copied to clipboard" : ""}
       </span>
     </div>
+  );
+}
+
+const TAB_TONES = {
+  page: { list: "", trigger: "" },
+  /* On the always-dark terminal card the default (page) tab colours would be
+     near-white on near-white, so the pill and its active tab are drawn in
+     translucent white instead. */
+  terminal: {
+    list: "bg-white/8",
+    trigger:
+      "text-white/60 hover:text-white focus-visible:ring-white/30 focus-visible:outline-none data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-none dark:text-white/60 dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-white/12 dark:data-[state=active]:text-white",
+  },
+} as const;
+
+/**
+ * A platform switch (macOS / Linux, Windows, Go) over one panel per platform.
+ * Tabs rather than a row of toggles because each choice swaps a whole block of
+ * content, and the panel stays tied to the tab that names it.
+ */
+export function PlatformTabs({
+  platforms,
+  value,
+  onValueChange,
+  tone = "page",
+  className,
+  children,
+}: {
+  platforms: readonly Platform[];
+  value: Platform;
+  onValueChange: (platform: Platform) => void;
+  tone?: keyof typeof TAB_TONES;
+  className?: string;
+  children: (platform: Platform) => ReactNode;
+}) {
+  const styles = TAB_TONES[tone];
+  return (
+    <Tabs value={value} onValueChange={(next) => onValueChange(next as Platform)} className={cn("min-w-0 gap-3", className)}>
+      <TabsList aria-label="Platform" className={cn("rounded-full", styles.list)}>
+        {platforms.map((platform) => (
+          <TabsTrigger key={platform} value={platform} className={cn("rounded-full px-3 text-xs", styles.trigger)}>
+            {INSTALL[platform].label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {platforms.map((platform) => (
+        <TabsContent key={platform} value={platform} className="min-w-0">
+          {children(platform)}
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
 
@@ -104,24 +159,8 @@ export function InstallCommand({
   }, [platforms]);
 
   return (
-    <div className={cn("flex w-full min-w-0 flex-col gap-2", className)}>
-      <div role="group" aria-label="Platform" className="flex gap-1">
-        {platforms.map((platform) => (
-          <button
-            key={platform}
-            type="button"
-            aria-pressed={platform === active}
-            onClick={() => setActive(platform)}
-            className={cn(
-              "font-body focus-visible:ring-ring/50 rounded-full px-3 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px]",
-              platform === active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {INSTALL[platform].label}
-          </button>
-        ))}
-      </div>
-      <CommandLine command={INSTALL[active].command} />
-    </div>
+    <PlatformTabs platforms={platforms} value={active} onValueChange={setActive} className={cn("w-full", className)}>
+      {(platform) => <CommandLine command={INSTALL[platform].command} />}
+    </PlatformTabs>
   );
 }

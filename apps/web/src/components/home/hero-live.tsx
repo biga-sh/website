@@ -1,6 +1,6 @@
 "use client";
 
-import { LaptopIcon, PauseIcon, PlayIcon, ProjectorIcon, SmartphoneIcon } from "lucide-react";
+import { LaptopIcon, ProjectorIcon, SmartphoneIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   type ComponentType,
@@ -14,7 +14,10 @@ import {
   useState,
 } from "react";
 
+import { PauseButton } from "@/components/home/pause-button";
+import { Badge } from "@/components/ui/badge";
 import { Circuit } from "@/components/ui/circuit";
+import { Kbd } from "@/components/ui/kbd";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
@@ -55,12 +58,13 @@ export function OnAirPill() {
 
   return (
     <div className="border-rail bg-background/70 inline-flex items-center gap-2.5 rounded-full border py-1 pr-4 pl-1">
-      <span
+      <Badge
         aria-hidden
-        className="border-brand/50 bg-brand/10 text-brand-text font-pixel rounded-full border px-2 py-1 text-[0.6875rem] leading-none tracking-[0.1em]"
+        variant="outline"
+        className="border-brand/50 bg-brand/10 text-brand-text font-pixel rounded-full px-2 py-1 text-[0.6875rem] leading-none tracking-[0.1em]"
       >
         LIVE
-      </span>
+      </Badge>
       <span className="font-body grid text-sm font-medium">
         {/* Every phrase sits in the same cell, invisible, so the pill is
             always as wide as the longest one and never jumps. */}
@@ -145,9 +149,7 @@ export function HeroCircuit({ host }: { host: string }) {
             <Typography variant="label" tone="muted">
               Your editor
             </Typography>
-            <kbd className="border-rail bg-muted text-muted-foreground rounded-md border px-1.5 py-0.5 font-mono text-[11px] leading-none">
-              ⌘S
-            </kbd>
+            <Kbd className="border-rail h-auto rounded-md px-1.5 py-0.5 font-mono leading-none">⌘S</Kbd>
           </div>
           <p translate="no" className="mt-2.5 truncate font-mono text-[13px]">
             src/client.ts
@@ -191,15 +193,7 @@ export function HeroCircuit({ host }: { host: string }) {
         ))}
       </Circuit>
 
-      <button
-        type="button"
-        onClick={toggle}
-        aria-pressed={paused}
-        className="border-rail bg-background text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 font-body mt-5 ml-auto flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px]"
-      >
-        {paused ? <PlayIcon className="size-3" strokeWidth={2} /> : <PauseIcon className="size-3" strokeWidth={2} />}
-        {paused ? "Play" : "Pause"}
-      </button>
+      <PauseButton paused={paused} onToggle={toggle} className="mt-5 ml-auto" />
     </div>
   );
 }

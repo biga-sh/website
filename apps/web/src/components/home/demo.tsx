@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ViewerFrame } from "@/components/home/viewer-frame";
 import { JoinForm } from "@/components/landing/join-form";
 import { Section, SectionHeader } from "@/components/site/frame";
+import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 
 export function Demo({ siteUrl, sessionPath }: { siteUrl: string; sessionPath: string }) {
@@ -34,14 +35,13 @@ export function Demo({ siteUrl, sessionPath }: { siteUrl: string; sessionPath: s
               {host}
               {sessionPath}
             </span>
-            <Link
-              href={sessionPath}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 font-body ml-auto inline-flex shrink-0 items-center gap-1 rounded-md px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px]"
-            >
-              <span className="hidden sm:inline">Open full screen</span>
-              <span className="sm:hidden">Open</span>
-              <ArrowUpRightIcon className="size-3.5" strokeWidth={1.75} />
-            </Link>
+            <Button asChild variant="secondary" size="xs" className="font-body ml-auto shrink-0 gap-1 rounded-full">
+              <Link href={sessionPath}>
+                <span className="hidden sm:inline">Open full screen</span>
+                <span className="sm:hidden">Open</span>
+                <ArrowUpRightIcon strokeWidth={1.75} />
+              </Link>
+            </Button>
           </div>
           <ViewerFrame src={`${sessionPath}?embed=1`} title="biga viewer, playing back a recorded broadcast of this repository" />
         </div>

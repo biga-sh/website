@@ -84,6 +84,9 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        {/* Declared by hand rather than via `app/manifest.ts`: see the note in
+            `app/manifest.webmanifest/route.ts` on Vercel Deployment Protection. */}
+        <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
         {/* Suppress Monaco language-service cancelation rejections before the
             Next.js dev overlay installs its unhandledrejection handler. */}
         <script

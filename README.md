@@ -1,117 +1,63 @@
-<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://website-vw4l.vercel.app/brand/biga-logo-light.svg">
+  <img src="https://website-vw4l.vercel.app/brand/biga-logo.svg" width="180" alt="biga">
+</picture>
 
-# biga
+# The web experience for biga
 
-**Stream your saves, not your screen.**
+The website is where shared code comes to life. Explore snapshots in a read-only browser viewer, search through files, inspect changes, and follow live updates without installing the viewer locally.
 
-The website and viewer behind [biga](https://github.com/biga-sh/cli):<br>
-broadcast a folder as a live, read-only link. No accounts, nothing to install.
+[Open biga](https://biga.sh) · [Documentation](https://website-vw4l.vercel.app/docs) · [Issues](https://github.com/biga-sh/website/issues)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/biga-sh/website/ci.yml?branch=main&style=flat-square&labelColor=0b0c0e)](https://github.com/biga-sh/website/actions/workflows/ci.yml)
-[![CLI](https://img.shields.io/github/v/release/biga-sh/cli?label=cli&style=flat-square&color=63e197&labelColor=0b0c0e)](https://github.com/biga-sh/cli/releases/latest)
+## What lives here?
 
-</div>
+- **Web viewer** — browse shared source code in the browser.
+- **Product website** — discover biga and how to use it.
+- **Documentation** — find usage guides, API references, and technical documentation.
 
-This repository is the read-only viewer a link opens, the marketing site and
-the documentation. Sessions are stored and streamed by the Go
-[API server](https://github.com/biga-sh/server); to run everything together on
-your own machine or network, use [biga-sh/docker](https://github.com/biga-sh/docker).
+Architecture details and system design documentation are maintained on the website rather than duplicated in this README.
 
-## Run it locally
+## Tech stack
 
-You need Node 22+, pnpm, and the [API server](https://github.com/biga-sh/server)
-on `:8080` (it needs Go and a Postgres database).
+- Next.js and React
+- TypeScript
+- pnpm workspace
+- Fumadocs for documentation
+- Zustand for client-side state
+- Zod for schemas and validation
 
-```sh
-# in a checkout of biga-sh/server
-DATABASE_URL=postgres://… go run ./cmd/biga-server
+## Local development
 
-# here
+**Requirements:** Node.js 22+ and pnpm.
+
+Install dependencies and start the development server:
+
+```bash
 pnpm install
-pnpm dev                                       # http://localhost:3000
+pnpm dev
 ```
 
-In development `/api/sessions/*` is proxied to `http://localhost:8080`
-(`BIGA_SERVER_URL` changes it). Then, in any project, with the
-[CLI installed](https://github.com/biga-sh/cli#install):
+The website runs at `http://localhost:3000`.
 
-```sh
-biga start
-```
+For API-backed development, run the Go API server and PostgreSQL setup described in the [documentation](https://website-vw4l.vercel.app/docs). The development proxy uses `http://localhost:8080` by default; set `BIGA_SERVER_URL` to change the target.
 
-The CLI talks to `http://localhost:3000` by default, so the link it prints
-opens your local copy.
+## Useful commands
 
-## How it fits together
-
-```mermaid
-flowchart LR
-  cli["biga CLI<br/>watch · hash · batch"] -- "PUT · POST (gzip)<br/>owner token" --> api
-
-  subgraph server["biga-sh/server · Go"]
-    api["REST API"]
-    sse["SSE stream"]
-    api -- "in-process" --> sse
-  end
-
-  api --> db[("Postgres")]
-  api -. "optional" .-> redis[("Redis / Valkey")]
-  redis -. "other instances" .-> sse
-  viewer["Viewer · this repo<br/>any browser"] -- "GET state · file" --> api
-  sse -- "checkpoint events" --> viewer
-```
-
-The CLI uploads a snapshot, then a checkpoint for every burst of saves. The
-server stores them (content-addressed, so a file saved back to an earlier state
-costs nothing) and relays each one to the viewers on that session over
-server-sent events. Only the CLI that created a session can write to it. The
-full tour is in the [architecture docs](apps/web/content/docs/architecture.mdx),
-and the endpoints are in the [API reference](apps/web/content/docs/api.mdx).
-
-## Repository
-
-| Path | What it is |
+| Command | Purpose |
 | --- | --- |
-| `apps/web` | The Next.js app: landing page, documentation (Fumadocs, in `content/docs`) and the session viewer. |
-| `packages/stores` | The viewer's Zustand stores. |
-| `packages/types` | Zod schemas and types for the API the viewer reads. |
-| `packages/eslint-config`, `packages/typescript-config` | Shared tooling config. |
-| `apps/cli` | `@zenshilabs/spire`, the original Node CLI, **deprecated**. Its last release only points people at `biga`, which is now a Go binary. |
+| `pnpm dev` | Start the development server |
+| `pnpm build` | Build for production |
+| `pnpm check-types` | Check TypeScript types |
+| `pnpm lint` | Run linting |
 
-## Configuration
+## Contributing
 
-| Variable | Description |
-| --- | --- |
-| `BIGA_SERVER_URL` | Where `/api/sessions/*` is proxied. Defaults to `http://localhost:8080` in development; leave unset in production when a reverse proxy routes it. |
-| `NEXT_PUBLIC_BIGA_API_URL` | Have browsers call the API server directly instead (it must list this site in `BIGA_CORS_ORIGINS`). Baked in at build time. |
-| `NEXT_PUBLIC_SITE_URL` | Public origin, for absolute metadata URLs. Defaults to `http://localhost:3000`. |
-| `BIGA_DEMO_SESSION_ID` | The session the landing page embeds. |
+Keep changes focused, follow the existing project conventions, and verify your changes before opening a pull request.
 
-The server's own settings are in its [README](https://github.com/biga-sh/server#configuration).
+- [Documentation](https://website-vw4l.vercel.app/docs)
+- [Browse the source](https://github.com/biga-sh/website)
+- [Report a bug](https://github.com/biga-sh/website/issues)
 
-## Docker
+---
 
-`docker build -t biga-web .` builds the site as a standalone Node server
-(`NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_BIGA_API_URL` are build arguments).
-[biga-sh/docker](https://github.com/biga-sh/docker) runs it with the API
-server, Postgres and Caddy.
-
-## Development
-
-```sh
-pnpm dev          # the web app
-pnpm build        # build every workspace
-pnpm check-types  # type-check
-pnpm lint         # lint
-```
-
-Two generated pieces are committed, and have scripts to rebuild them:
-
-| Script (in `apps/web`) | Regenerates |
-| --- | --- |
-| `node scripts/build-showcase.mjs` | The snapshot of the CLI repository the landing page renders in the real viewer (`src/lib/showcase`). Needs the CLI checked out next to this repo. |
-| `node scripts/build-brand-assets.mjs` | The downloadable logo files in `public/brand`. |
-
-## License
-
-[MIT](LICENSE)
+<p align="center">A clearer way to share your code. <strong>biga</strong></p>
